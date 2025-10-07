@@ -1,0 +1,20 @@
+name: transcript-video
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - ffmpeg
+  - yt-dlp
+  - imageio-ffmpeg
+  - librosa
+  - numpy
+  - scipy
+  - pytorch
+  - transformers
+  - sentencepiece
+  - pysoundfile
+  - pip:
+      - openai-whisper
+      - faster-whisper
+
