@@ -1,0 +1,15 @@
+*.mp4
+*.txt
+*.json
+*.png
+*.jpg
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.csv
+*.zip
+.cache
+.venv
+_tmp

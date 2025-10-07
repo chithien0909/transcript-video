@@ -1,0 +1,716 @@
+1
+00:00:00,000 --> 00:00:04,000
+Quá mạnh là cụm từ, mình phải thốt ra sau khi thét hiệu năng trên 2 chiếc máy này
+
+2
+00:00:04,000 --> 00:00:07,000
+iPhone 7 Pro Max và Xiaomi 17 Pro Max
+
+3
+00:00:07,000 --> 00:00:09,000
+Tên thì giống nhau đấy, nhưng con chip thì khác nhau anh em ạ
+
+4
+00:00:09,000 --> 00:00:12,000
+Với iPhone 7 Pro Max thì sử dụng con chip Apple A19 Pro
+
+5
+00:00:12,000 --> 00:00:17,000
+Trong khi với Xiaomi 17 Pro Max thì chúng ta sẽ sử dụng ở trong này 1 con chip đó chính là Snapdragon 8 Elite Gen 5
+
+6
+00:00:17,000 --> 00:00:20,000
+2 con chip này khác tên, khác nền tảng
+
+7
+00:00:20,000 --> 00:00:23,000
+Nhưng mà trong video này thì mình sẽ mang đến để so sánh cùng với nhau
+
+8
+00:00:23,000 --> 00:00:26,000
+Để xem Apple A19 Pro hay là Snapdragon 8 Elite Gen 5
+
+9
+00:00:26,000 --> 00:00:28,600
+Đầu sẽ là chiếc máy cho mức độ điện cao hơn
+
+10
+00:00:28,600 --> 00:00:30,600
+Cũng như hiệu năng thuần của nó cao hơn
+
+11
+00:00:30,600 --> 00:00:32,600
+Thì ngay trong video này, hãy cùng mình làm rõ ngay nha
+
+12
+00:00:32,600 --> 00:00:38,300
+Ok, rồi bây giờ hãy cùng mình bắt đầu ngay với những bài test liên quan đến chấm điểm số trước
+
+13
+00:00:38,300 --> 00:00:39,300
+Đầu tiên là A2TU này
+
+14
+00:00:39,300 --> 00:00:42,300
+Mình có chấm thử điểm số trên chiếc iPhone 17 Pro Max này
+
+15
+00:00:42,300 --> 00:00:44,300
+Điểm số của nó lên tới là 2,3 triệu điểm
+
+16
+00:00:44,300 --> 00:00:46,300
+Còn đối với lại iPhone 17 Pro Max
+
+17
+00:00:46,300 --> 00:00:49,300
+Trời ơi, đây mới là quan quái vật về mặt hiệu năng anh em này
+
+18
+00:00:49,300 --> 00:00:53,300
+Điểm số A2TU của nó lên tới là 3,6 triệu điểm
+
+19
+00:00:53,300 --> 00:00:56,040
+Nó cao hơn so với iPhone tận 1,4 triệu
+
+20
+00:00:56,040 --> 00:00:58,440
+Tất nhiên là chúng ta phải nói rõ ràng với nhau một tí
+
+21
+00:00:58,440 --> 00:01:03,300
+là chiếc Xiaomi 17 Pro Max đang sử dụng cái phiên bản là AnTuTu V11
+
+22
+00:01:03,300 --> 00:01:06,780
+Trong khi với iPhone 7 Pro Max thì nó sẽ chỉ là AnTuTu V10 thôi
+
+23
+00:01:06,780 --> 00:01:09,540
+Thực ra những con số này thì anh em sẽ chỉ dừng lại những tham khảo của người nhé
+
+24
+00:01:09,540 --> 00:01:11,740
+Còn một tí nữa mình sẽ đi đến với những tựa game cụ thể
+
+25
+00:01:11,740 --> 00:01:14,840
+để cho mọi người xem được mức ổn địa mặt hiệu nào nó ra làm sao
+
+26
+00:01:14,840 --> 00:01:19,740
+Thậm chí trong cái bài test về AnTuTu này thì mình có mang đến luôn một cái phiên bản tiền nhiệm nữa
+
+27
+00:01:19,740 --> 00:01:24,240
+đó chính là cái Xiaomi 15 Ultra cũng là cái phiên bản AOTU V11 luôn
+
+28
+00:01:24,240 --> 00:01:28,320
+thì điểm số của nó cũng lên tới là 3,038 triệu điểm
+
+29
+00:01:28,320 --> 00:01:29,100
+Gia măng!
+
+30
+00:01:29,100 --> 00:01:34,400
+Có vẻ là cái phiên bản V11 này nó sẽ làm cho điểm số của một chiếc máy nó cao hơn một tí so với bình thường
+
+31
+00:01:34,400 --> 00:01:37,900
+Mình nghĩ rằng đây nó cũng sẽ là một lý do tại sao điểm số trên iPhone 7 Pro Max
+
+32
+00:01:37,900 --> 00:01:41,140
+và điểm số của Xiaomi 7 Pro Max nó lại chạy lệch chào nhiều đến như thế
+
+33
+00:01:41,140 --> 00:01:42,360
+Tất nhiên là như mình nói vừa nãy
+
+34
+00:01:42,360 --> 00:01:45,620
+cái việc là chấm điểm trên một thiết bị AOS và một thiết bị Android
+
+35
+00:01:45,620 --> 00:01:47,340
+nó cũng sẽ tạo ra cái sự khác biệt
+
+36
+00:01:47,340 --> 00:01:51,340
+và tất nhiên cái này nó sẽ không quyết định hoàn toàn hiệu năng của máy mạnh hơn hay yếu hơn anh em nhé
+
+37
+00:01:51,340 --> 00:01:56,940
+thậm chí là khi anh em nhìn ký vào phần chấm điểm GPU thì với iPhone đang sử dụng một cái thư viện đồ họa có tên là METO
+
+38
+00:01:56,940 --> 00:02:01,340
+còn đối với lại Xiaomi 17 Pro Max thì cái thư viện đồ họa của nó đang sử dụng ở đây là Vulkan C
+
+39
+00:02:01,340 --> 00:02:04,340
+nên là nó cũng sẽ tạo ra cái sự khác về điểm số rõ ràng ở đây
+
+40
+00:02:04,340 --> 00:02:07,640
+để có một cái nhìn đúng hơn được mặt hiệu năng thì mình sẽ test thử với lẻ khích Ben 6
+
+41
+00:02:07,640 --> 00:02:11,540
+đây sẽ là một cái để chấm được cả điểm CPU của nó một cách rõ ràng nhất cho anh em xem
+
+42
+00:02:11,540 --> 00:02:16,680
+thì mình thấy rằng là điểm số đơn nhân của xe 17 Pro Max lên tới là 3.328 triệu điểm
+
+43
+00:02:16,680 --> 00:02:20,680
+Còn với iPhone thì nó sẽ cao hơn so với xe 17 Pro Max một xíu là 3.860 điểm
+
+44
+00:02:20,680 --> 00:02:23,600
+Điểm số cao hơn này có nghĩa rằng là cái tốc độ mở ứng dụng này
+
+45
+00:02:23,600 --> 00:02:26,680
+hay là kể cả mức độ phản hộ của giao diện, độ mượt mà, lướt quép các thứ
+
+46
+00:02:26,680 --> 00:02:31,040
+hay lướt mạng xã hội của nó cũng sẽ có phần tốt hơn so với cái chiếc Xiaomi 17 Pro Max
+
+47
+00:02:31,040 --> 00:02:33,760
+Điểm đa dân của iPhone cũng sẽ cao hơn so với xe Xiaomi
+
+48
+00:02:33,760 --> 00:02:35,440
+Điều này thì có nghĩa rằng là với tác vụ nặng
+
+49
+00:02:35,440 --> 00:02:38,840
+Ví dụ như kiểu AMG Render video 4K này, trịnh sở ảnh RAW hàng loạt
+
+50
+00:02:41,540 --> 00:02:45,940
+sẽ xử lý ngon hơn. So với lại chiếc Snapdragon 17 Pro Max sử dụng quà chít Snapdragon 8 Elite Gen 5
+
+51
+00:02:45,940 --> 00:02:48,940
+Còn đối với riêng quà chít Snapdragon 8 Elite Gen 5 này
+
+52
+00:02:48,940 --> 00:02:51,940
+khi mà em so sánh với Snapdragon 8 Elite trên chiếc
+
+53
+00:02:51,940 --> 00:02:54,940
+Snapdragon 15 Ultra thì mình thấy rằng là cái điểm số của nó
+
+54
+00:02:54,940 --> 00:02:57,940
+sẽ cao hơn đâu đấy là khoảng 10%
+
+55
+00:02:57,940 --> 00:03:00,940
+Thực ra là không trình lệch nhiều lắm, lý ra 10% nó cũng bình thường ấy. Buồn lại là
+
+56
+00:03:00,940 --> 00:03:04,940
+với khả năng xử lý 3D thì chiếc Snapdragon 17 Pro Max lại tốt hơn so với iPhone 17 Pro Max
+
+57
+00:03:04,940 --> 00:03:07,940
+Ở cái bài test là 3D Mark Wireless Extreme Shred Test
+
+58
+00:03:07,940 --> 00:03:10,940
+Điểm số cả vòng lọc thấp tết và cao nhất nó sẽ đều cao hơn so với iPhone 17 Pro Max
+
+59
+00:03:10,940 --> 00:03:14,940
+Thậm chí là về cả mức độ ổn định thì Xiaomi cũng sẽ nhỉnh hơn so với iPhone luôn
+
+60
+00:03:14,940 --> 00:03:16,940
+Khoảng cách lúc này là khá khá chứ không phải ít anh em nhé
+
+61
+00:03:16,940 --> 00:03:20,940
+Nona thì điểm số này nó càng cao thì những cái trải nghiệm gaming của anh em như kiểu đồ họa các thứ này
+
+62
+00:03:20,940 --> 00:03:27,940
+nó cũng sẽ càng tốt nên là mình nghĩ rằng là ở 2 cái phần này thì rõ ràng con chip đến từ Snapdragon là 8E Legion 5
+
+63
+00:03:27,940 --> 00:03:30,940
+trên Xiaomi Vepromax nó sẽ có phần nhỉnh hơn so với iPhone Vepromax
+
+64
+00:03:30,940 --> 00:03:37,940
+Tuy nhiên là với một bài test nữa là Solarbyte, Wireless Xtreme, G-Test thì mình thấy rằng là với cả 2 cái chiếc máy này thì iPhone lại ngon hơn một chút nhé
+
+65
+00:03:37,940 --> 00:03:41,940
+Với vòng lọc cao nhất của iPhone gần như là điểm số đoạt gấp đôi so với Xiaomi rồi
+
+66
+00:03:41,940 --> 00:03:46,440
+Điều này có nghĩa rằng là cái GPU, cái bộ xử lý đổ họa của iPhone trên con chip Apple A19 Pro
+
+67
+00:03:46,440 --> 00:03:52,940
+có khả năng xử lý đổ họa Ray Tracing ngon hơn so với lại khả năng xử lý đổ họa trên Snapdragon 8S-25
+
+68
+00:03:52,940 --> 00:03:54,940
+được trang bị trên cái chế độ Xiaomi Veypro Mac này
+
+69
+00:03:54,940 --> 00:04:00,440
+Tóm tất cả những cái điều mình vừa test ở phía bên trên lại, thì mình thấy rằng là nếu như xét về cái mức độ xử lý CPU
+
+70
+00:04:00,440 --> 00:04:04,440
+thì rõ ràng là chiếc iPhone Veypro Mac này nó sẽ có mức độ xử lý ngon hơn
+
+71
+00:04:04,440 --> 00:04:08,640
+Còn nếu như những cái nhân khác liên quan đến 3D, đổ họa các thứ thì có những cái phần
+
+72
+00:04:08,640 --> 00:04:10,740
+chiếc Xiaomi V7 Pro Max này nó sẽ xử lý ngon hơn
+
+73
+00:04:10,740 --> 00:04:12,940
+Chứ đúng cái phần liên quan đến Ray Chasing ra thôi
+
+74
+00:04:12,940 --> 00:04:16,640
+Nói chung là để mà đi cụ thể hơn và hiệu năng nó như thế nào
+
+75
+00:04:16,640 --> 00:04:18,540
+thì bọn mình sẽ phải đi đến những bài test liên quan cụ thể
+
+76
+00:04:18,540 --> 00:04:20,740
+Bọn mình sẽ test với hai tựa game là Good Throing Quay
+
+77
+00:04:20,740 --> 00:04:22,640
+và cái thứ 2 là Genshin Impact
+
+78
+00:04:22,640 --> 00:04:25,440
+Đây là hai tựa game mà có thể nói rằng là test nó mới ra vấn đề rồi anh em ạ
+
+79
+00:04:25,440 --> 00:04:28,440
+Chứ còn bây giờ mà Low Fab G với Low Tốc Chiến ra test thì
+
+80
+00:04:28,440 --> 00:04:30,340
+cả hai chiếc máy nó đều chạy ngon phà phà luôn
+
+81
+00:04:30,340 --> 00:04:31,480
+Hiệu năng của nó quá mạnh mà
+
+82
+00:04:31,480 --> 00:04:33,240
+Đầu tiên là với tựa game quen thuộc hơn trước đi
+
+83
+00:04:33,240 --> 00:04:36,440
+Genshin Impact mình sẽ đẩy mức đổ họa lên cao nhất cộng với 60 FPS
+
+84
+00:04:36,440 --> 00:04:38,800
+Nhấn mạnh rằng là đây là cao nhất anh em nhé
+
+85
+00:04:38,800 --> 00:04:40,320
+Anh em nhìn thử cái biểu đồ mà xem
+
+86
+00:04:40,320 --> 00:04:43,920
+Cả hai con máy này thì nó đều cho ra một cái mức đổ họa thẳng tắp
+
+87
+00:04:43,920 --> 00:04:45,000
+Rất bượt mà luôn
+
+88
+00:04:45,000 --> 00:04:46,160
+Trong này thì mình thấy rằng là
+
+89
+00:04:46,160 --> 00:04:47,600
+Khi mọi người chơi với một cái map là Sumeru
+
+90
+00:04:47,600 --> 00:04:49,600
+Đây là một cái map rất nặng trong Genshin Impact
+
+91
+00:04:49,600 --> 00:04:51,680
+Nhưng mà cả hai cái chiếc máy nó đều lock một cách rất ngon lành
+
+92
+00:04:51,680 --> 00:04:53,160
+Không có bất kỳ một cái vấn đề gì cả
+
+93
+00:04:53,160 --> 00:04:58,960
+Tuy nhiên, nếu như mọi người nói là đâu sẽ là chiếc máy chơi Genshin Impact ngon hơn thì mình nghĩ là iPhone 7 Pro Max.
+
+94
+00:04:58,960 --> 00:05:01,120
+Lý do là nó đến ở phần quản lý nhiệt độ.
+
+95
+00:05:01,120 --> 00:05:05,840
+Khi sau một cái mạng chơi thì nhiệt độ bề mặt của chiếc máy chỉ là khoảng 38 độ.
+
+96
+00:05:05,840 --> 00:05:12,440
+Tính ra nếu như nhắc đến đây thì iPhone 7 Pro Max là chiếc máy đầu tiên và duy nhất thời điểm hiện tại có thể chơi Genshin Impact Max setting.
+
+97
+00:05:12,440 --> 00:05:14,440
+Nhệt độ của nó chỉ là 38 độ.
+
+98
+00:05:14,440 --> 00:05:15,560
+Mát dã man luôn.
+
+99
+00:05:15,560 --> 00:05:21,960
+Điều này chứng tỏ rằng là cái phần hệ thống tản nhiệt bùng hơi của Apple năm nay đặt ở bên trong chiếc 17 Pro Max này là nó có tác dụng thật sự.
+
+100
+00:05:21,960 --> 00:05:27,080
+Và mức độ quản lý nhiệt độ của nó này hay là tạ nhật của nó cũng làm rất ngon so với những phiên bản tiền nhiệm
+
+101
+00:05:27,080 --> 00:05:29,320
+Nên là nó mới cho ra mức nhiệt năng như thế này
+
+102
+00:05:29,320 --> 00:05:32,320
+Điện năng thiệu thụ của chiếc iPhone này cũng rất là 3 chấm rồi anh em chứ
+
+103
+00:05:32,320 --> 00:05:35,400
+Nó chỉ lây quanh là 4W mà thôi để cho anh em dễ hình dung
+
+104
+00:05:35,400 --> 00:05:40,760
+Với mức tiêu thụ bình ngường, điện năng của mấy con flagship đời trước nó sẽ là khoảng 5-6W
+
+105
+00:05:40,760 --> 00:05:44,320
+Còn với chiếc Xiaomi Redmi Pro Max này, mặc dù nó chơi game cũng rất mát
+
+106
+00:05:44,320 --> 00:05:46,760
+Nhiệt độ của nó thì chỉ tầm 39 độ thôi
+
+107
+00:05:46,760 --> 00:05:50,560
+Nhưng mà rõ ràng 39 độ so với 38 độ thì không bằng iPhone nữa
+
+108
+00:05:50,560 --> 00:05:55,760
+Tuy nhiên là với một tựa game thứ hai, GOOTHERING WAY, thì đây là một câu chuyện ngược lại hoàn toàn so với Genshin Impact
+
+109
+00:05:55,760 --> 00:05:58,160
+với mức cải đặt gần như là cao nhất ở bên trên này
+
+110
+00:05:58,160 --> 00:05:59,660
+À không, thật ra nó là cao nhất luôn rồi
+
+111
+00:05:59,660 --> 00:06:03,060
+với biểu đồ FX trên cả hai con đều rất ngon và vượt mà y như nhau
+
+112
+00:06:03,060 --> 00:06:06,960
+Tuy nhiên là trong quá trình chơi game thì mình thấy rằng là chiếc iPhone đột nhiên nó bị giảm sáng đi
+
+113
+00:06:06,960 --> 00:06:12,060
+và thời điểm xuất hiện giảm sáng nó sẽ chỉ vào khoảng tầm phút thứ 5 hoặc phút thứ 6 khi mình chơi game thôi
+
+114
+00:06:12,060 --> 00:06:14,860
+chứ kể là sau cái mặt chơi thì chiếc iPhone nóng lên đáng kể
+
+115
+00:06:14,860 --> 00:06:17,360
+loan quanh đến nhiệt độ bề mặt lên tới 41 độ C
+
+116
+00:06:17,360 --> 00:06:21,360
+Nóng hơn so với Xiaomi Pro Max khoảng tầm 2 độ, kể cả mặt trước hay mặt sau
+
+117
+00:06:21,360 --> 00:06:24,360
+Tìm hiểu một chút thì mình thấy rằng là iPhone trong cùng một cái mản chơi như thế này
+
+118
+00:06:24,360 --> 00:06:28,360
+sẽ tiêu thụ điện năng cao hơn so với Xiaomi, đâu đấy là kinh tập khoảng độ là 5,58 W
+
+119
+00:06:28,360 --> 00:06:32,360
+Những cái việc liên quan đến nóng máy này hay giảm sáng thì mình nghĩ rằng nó sẽ là những điều không thể tránh khỏi được
+
+120
+00:06:32,360 --> 00:06:34,360
+Tại vì rằng là máy phải hoạt động với công suất cao mà
+
+121
+00:06:34,360 --> 00:06:37,360
+Mình nghĩ rằng một phần của cái lý do này nó cũng liên quan đến tố ưu nữa
+
+122
+00:06:37,360 --> 00:06:40,360
+Tại vì là Google Thruing Way thì hiện tại nó chưa được ra mắt tại Việt Nam
+
+123
+00:06:40,360 --> 00:06:43,360
+Một điều mình rất ấn tượng với cái Xiaomi Pro Max này đó chính là
+
+124
+00:06:43,360 --> 00:06:45,860
+Những cái tựa game mà mặc dù là nó rất nặng anh à bạn
+
+125
+00:06:45,860 --> 00:06:47,860
+nhưng mà chiếc máy này hoàn toàn không có bóp hiệu năng
+
+126
+00:06:47,860 --> 00:06:50,260
+môi có thể chơi một cách gần như là full hiệu năng của nó luôn
+
+127
+00:06:50,260 --> 00:06:51,760
+với cái mức độ quản điện nhiệt độ này
+
+128
+00:06:51,760 --> 00:06:54,060
+hay kể cả hiệu năng thể hiện của nó ra cũng cực kỳ tốt
+
+129
+00:06:54,060 --> 00:06:57,560
+Nhưng dù sao ấy, qua hai cái bài test này thì anh em phải thừa nhận với mình một câu rằng là
+
+130
+00:06:57,560 --> 00:06:58,860
+kể cả hai cái chiếc máy này
+
+131
+00:06:58,860 --> 00:07:01,260
+iPhone 17 Pro Max hay là Xiaomi 17 Pro Max
+
+132
+00:07:01,260 --> 00:07:03,660
+thì cả hai chiếc máy này đều được trang bị những con chip quá mạnh
+
+133
+00:07:03,660 --> 00:07:05,960
+cũng như là những cái phần quản điện nhiệt độ ở bên trong
+
+134
+00:07:05,960 --> 00:07:07,660
+hay là những công nghệ mới nhất của các hãng
+
+135
+00:07:07,660 --> 00:07:09,220
+đều được đặt lên cả hai cái chiếc máy này
+
+136
+00:07:09,220 --> 00:07:11,100
+thành thật là khả năng chơi game với tựa game nhẹ
+
+137
+00:07:11,100 --> 00:07:13,300
+hay là kể cả tựa game nặng như mình có test trong video này
+
+138
+00:07:13,300 --> 00:07:15,060
+là Genshin Impact hay là Gou Thuring Wave
+
+139
+00:07:15,060 --> 00:07:17,460
+thì nó đều quá ngon để có thể chạy trên cả hai chiếc máy này
+
+140
+00:07:17,460 --> 00:07:19,500
+Có hay chăng thì mọi người phải xăm soi vào rất kỹ
+
+141
+00:07:19,500 --> 00:07:21,460
+Cái sự khác biệt của nó chỉ đến khi bọn mình vác ra đây
+
+142
+00:07:21,460 --> 00:07:23,780
+những cái thiết bị phải gọi là rất rất tiên tiến
+
+143
+00:07:23,780 --> 00:07:24,860
+như kiểu là đo nhiệt này
+
+144
+00:07:24,860 --> 00:07:27,300
+đo trên lầy từng để không phải một nhiệt độ một
+
+145
+00:07:27,300 --> 00:07:30,780
+hay là những cái liên quan đến mức độ tối hóa về điện năng
+
+146
+00:07:30,780 --> 00:07:32,740
+nó chỉ là vài watt thôi bọn mình cũng đo
+
+147
+00:07:32,740 --> 00:07:34,240
+thì mới có thể thấy được sự khác biệt
+
+148
+00:07:34,240 --> 00:07:35,980
+chứ còn nếu như anh em chơi bình thường thì mình nghĩ rằng là
+
+149
+00:07:35,980 --> 00:07:37,980
+nó không có sự khác biệt quá nhiều ở đây đâu
+
+150
+00:07:37,980 --> 00:07:39,620
+Nói chung là về khoản thiết kế này
+
+151
+00:07:39,620 --> 00:07:40,740
+cũng như là những kích độ hoàn thiện này
+
+152
+00:07:40,740 --> 00:07:42,420
+thì anh em không phải lo lắng quá nhiều đâu
+
+153
+00:07:42,420 --> 00:07:44,100
+kể cả là Xiaomi 17 Pro Max
+
+154
+00:07:44,100 --> 00:07:45,580
+hay là iPhone 17 Pro Max
+
+155
+00:07:45,580 --> 00:07:47,580
+thì bọn mình cũng đã có một bài mở hộp
+
+156
+00:07:47,580 --> 00:07:49,180
+cũng như là mổ bụng nó ra
+
+157
+00:07:49,180 --> 00:07:50,620
+cùng với Fast Care luôn rồi
+
+158
+00:07:50,620 --> 00:07:52,980
+Nếu như anh em đang thực sự quan tâm những trình sửa chữa các thứ
+
+159
+00:07:52,980 --> 00:07:54,400
+thì ngay trong tháng 10 này
+
+160
+00:07:54,400 --> 00:07:56,500
+Fast Care đang tung ra hàng loãng trình ưu đại mới
+
+161
+00:07:56,500 --> 00:07:58,380
+đặc biệt là hơn các bạn học sinh sinh viên
+
+162
+00:07:58,380 --> 00:08:04,340
+Từ ngày 15 tháng 10 đến ngày 19 tháng 10, các bạn học sinh hay là sinh viên đến sửa chữa sẽ được giảm thêm 15%
+
+163
+00:08:04,340 --> 00:08:08,940
+Tối đa là 300.000 đồng dành cho tất cả các dịch vụ sửa chữa từ điện thoại laptop đến máy tính bảng này
+
+164
+00:08:08,940 --> 00:08:16,180
+Ngoài ra, anh em sẽ còn được giảm thêm 15% lên đến 300.000 đồng khi mua từ 2 phụ kiện trả lên hoặc giảm 2%
+
+165
+00:08:16,180 --> 00:08:20,900
+Khi mà anh em giãn thưởng lực sử dụng kèm với các dịch vụ như kiểu là thay màn hay ép kính các thứ là cũng vô cùng yên tâm luôn
+
+166
+00:08:20,900 --> 00:08:25,060
+Rồi cuối cùng tóm lại này nếu như anh em muốn chọn một chiếc máy thuần để chơi game
+
+167
+00:08:25,060 --> 00:08:27,220
+mà kiểu cả hai chiếc máy này mọi người đều chọn được chẳng hạn
+
+168
+00:08:27,220 --> 00:08:29,420
+mọi người cần một chiếc máy có khả năng chơi game ngon hơn
+
+169
+00:08:29,420 --> 00:08:33,580
+thì xem về Pro Max mình nghĩ rằng nó sẽ là sự chọn tốt hơn cho mọi người vì hai lý do thôi
+
+170
+00:08:33,580 --> 00:08:36,740
+thứ nhất là cái mức độ quản lý hiệu năng, quản lý nhiệt độ của nó
+
+171
+00:08:36,740 --> 00:08:39,300
+ở trên chiếc máy này năm nay nó cũng làm rất ngon rồi, nó không bị bóp hiệu năng
+
+172
+00:08:39,300 --> 00:08:43,980
+thứ hai, đó chứ là chiếc máy này không gặp hiện tượng giảm sáng như giống như iPhone nó sẽ đỡ bị khó chịu hơn
+
+173
+00:08:43,980 --> 00:08:47,100
+Đặc biệt đến những tên game FPS, mình biết rằng là khi mà giảm sáng nó sẽ rất khó chịu
+
+174
+00:08:47,100 --> 00:08:50,140
+Đây, ưu, ý kiến của mọi người về cả hai cái chương máy này khi mà chơi game như thế nào
+
+175
+00:08:50,140 --> 00:08:52,860
+Hay là mọi người sẽ chọn chương máy nào để chơi game cho hai chương máy này
+
+176
+00:08:52,860 --> 00:08:54,060
+Có thể comment ở phía bên dưới nhé
+
+177
+00:08:54,060 --> 00:08:55,940
+Và cũng đừng quên để lại một like sắp đoàn để hộ chúng mình
+
+178
+00:08:55,940 --> 00:08:58,460
+Còn bây giờ thì xin chào, hẹn gặp lại anh em trong những video lần sau
+
+179
+00:08:58,460 --> 00:08:59,020
+Bye bye
+
