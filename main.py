@@ -11,9 +11,147 @@ from tqdm import tqdm
 # Config
 # ------------------------------
 HARDCODED_FOLDER = r"./videos"
+TRANSCRIPTS_FOLDER = r"./transcripts"
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(PROJECT_ROOT, ".cache")
+
+# Get ffmpeg path for yt-dlp
+def get_ffmpeg_path():
+    """Get the path to ffmpeg executable for yt-dlp."""
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    local_ffmpeg = os.path.join(project_root, "tools", "ffmpeg", "bin", "ffmpeg.exe")
+    
+    # Use vendored .exe on Windows if it exists
+    if os.name == "nt" and os.path.exists(local_ffmpeg):
+        return local_ffmpeg
+    
+    # Fallback to system ffmpeg
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.exists(exe):
+            return exe
+    except Exception:
+        pass
+    
+    return "ffmpeg"  # System ffmpeg
+
+FFMPEG_PATH = get_ffmpeg_path()
+
+# yt-dlp Configuration Presets (will be initialized after ffmpeg path is determined)
+def create_ytdlp_presets():
+    """Create yt-dlp presets with ffmpeg path included."""
+    return {
+        "default": {
+            "format": "best[ext=mp4]/mp4/best",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "high_quality": {
+            "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "fast_download": {
+            "format": "worst[ext=mp4]/mp4/worst",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "with_subtitles": {
+            "format": "best[ext=mp4]/mp4/best",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": True,
+            "writeautomaticsub": True,
+            "subtitleslangs": ["en", "vi"],
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "audio_only": {
+            "format": "bestaudio[ext=m4a]/bestaudio",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "extractaudio": True,
+            "audioformat": "mp3",
+            "audioquality": "192K",
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "playlist": {
+            "format": "best[ext=mp4]/mp4/best",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "playlistend": 10,  # Limit to first 10 videos
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        # Quality-specific presets
+        "4k_ultra": {
+            "format": "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/best[height<=2160][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "1080p_hd": {
+            "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "720p_hd": {
+            "format": "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "480p_sd": {
+            "format": "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "360p_low": {
+            "format": "bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        },
+        "240p_minimal": {
+            "format": "bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[height<=240][ext=mp4]/mp4",
+            "restrictfilenames": True,
+            "writeinfojson": False,
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "ffmpeg_location": FFMPEG_PATH,
+        }
+    }
+
+# Initialize presets after ffmpeg path is determined
+YTDLP_PRESETS = create_ytdlp_presets()
+
+# Default yt-dlp configuration file path
+YTDLP_CONFIG_FILE = os.path.join(PROJECT_ROOT, "ytdlp_config.json")
 
 def configure_cache_dirs():
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -36,6 +174,292 @@ def configure_cache_dirs():
 
 configure_cache_dirs()
 
+# ------------------------------
+# yt-dlp Configuration Management
+# ------------------------------
+def load_ytdlp_config():
+    """Load yt-dlp configuration from file or return default preset."""
+    if os.path.exists(YTDLP_CONFIG_FILE):
+        try:
+            with open(YTDLP_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config
+        except (json.JSONDecodeError, IOError) as e:
+            print(f" Warning: Could not load yt-dlp config file: {e}")
+            print("Using default configuration.")
+    
+    return YTDLP_PRESETS["default"]
+
+def save_ytdlp_config(config):
+    """Save yt-dlp configuration to file."""
+    try:
+        with open(YTDLP_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f" yt-dlp configuration saved to {YTDLP_CONFIG_FILE}")
+    except IOError as e:
+        print(f" Error saving yt-dlp config: {e}")
+
+def get_ytdlp_config(preset_name=None, custom_config=None):
+    """Get yt-dlp configuration based on preset or custom config."""
+    if custom_config:
+        # Ensure ffmpeg path is included in custom config
+        config = custom_config.copy()
+        if "ffmpeg_location" not in config:
+            config["ffmpeg_location"] = FFMPEG_PATH
+        return config
+    
+    if preset_name and preset_name in YTDLP_PRESETS:
+        return YTDLP_PRESETS[preset_name]
+    
+    # Load from file and ensure ffmpeg path is included
+    config = load_ytdlp_config()
+    if "ffmpeg_location" not in config:
+        config["ffmpeg_location"] = FFMPEG_PATH
+    return config
+
+def interactive_ytdlp_config():
+    """Interactive menu for configuring yt-dlp settings."""
+    print("\n yt-dlp Configuration")
+    print("-" * 30)
+    print("Select configuration preset:")
+    print(" 1. Default (balanced quality/speed)")
+    print(" 2. High Quality (best video + audio)")
+    print(" 3. Fast Download (lower quality, faster)")
+    print(" 4. With Subtitles (download subtitles too)")
+    print(" 5. Audio Only (extract audio)")
+    print(" 6. Playlist (limit playlist downloads)")
+    print(" 7.  Quality Selection")
+    print(" 8. Custom Configuration")
+    print(" 9. Load from file")
+    print("10. Save current config")
+    
+    while True:
+        choice = input("\nSelect option (1-10): ").strip()
+        
+        if choice == "1":
+            return "default", YTDLP_PRESETS["default"]
+        elif choice == "2":
+            return "high_quality", YTDLP_PRESETS["high_quality"]
+        elif choice == "3":
+            return "fast_download", YTDLP_PRESETS["fast_download"]
+        elif choice == "4":
+            return "with_subtitles", YTDLP_PRESETS["with_subtitles"]
+        elif choice == "5":
+            return "audio_only", YTDLP_PRESETS["audio_only"]
+        elif choice == "6":
+            return "playlist", YTDLP_PRESETS["playlist"]
+        elif choice == "7":
+            return interactive_quality_selection()
+        elif choice == "8":
+            return "custom", create_custom_ytdlp_config()
+        elif choice == "9":
+            config = load_ytdlp_config()
+            return "file", config
+        elif choice == "10":
+            save_ytdlp_config(YTDLP_PRESETS["default"])
+            print(" Default configuration saved to file.")
+            continue
+        else:
+            print(" Invalid choice. Please enter 1-10.")
+
+def interactive_quality_selection():
+    """Interactive menu for selecting video quality."""
+    print("\n Video Quality Selection")
+    print("-" * 30)
+    print("Select video quality:")
+    print(" 1. 4K Ultra (2160p) - Highest quality, largest file")
+    print(" 2. 1080p HD - High quality, good balance")
+    print(" 3. 720p HD - Medium quality, smaller file")
+    print(" 4. 480p SD - Standard quality, compact file")
+    print(" 5. 360p Low - Lower quality, small file")
+    print(" 6. 240p Minimal - Lowest quality, tiny file")
+    print(" 7. Custom resolution")
+    print(" 8. Back to main menu")
+    
+    while True:
+        choice = input("\nSelect quality option (1-8): ").strip()
+        
+        if choice == "1":
+            return "4k_ultra", YTDLP_PRESETS["4k_ultra"]
+        elif choice == "2":
+            return "1080p_hd", YTDLP_PRESETS["1080p_hd"]
+        elif choice == "3":
+            return "720p_hd", YTDLP_PRESETS["720p_hd"]
+        elif choice == "4":
+            return "480p_sd", YTDLP_PRESETS["480p_sd"]
+        elif choice == "5":
+            return "360p_low", YTDLP_PRESETS["360p_low"]
+        elif choice == "6":
+            return "240p_minimal", YTDLP_PRESETS["240p_minimal"]
+        elif choice == "7":
+            return create_custom_quality_config()
+        elif choice == "8":
+            return interactive_ytdlp_config()  # Go back to main config menu
+        else:
+            print(" Invalid choice. Please enter 1-8.")
+
+def create_custom_quality_config():
+    """Create custom quality configuration."""
+    print("\n Custom Quality Configuration")
+    print("-" * 30)
+    
+    # Get resolution
+    while True:
+        resolution = input("Enter maximum resolution height (e.g., 1080, 720, 480): ").strip()
+        if resolution.isdigit() and int(resolution) > 0:
+            resolution = int(resolution)
+            break
+        print(" Please enter a valid positive number.")
+    
+    # Get additional options
+    print(f"\nAdditional options for {resolution}p:")
+    print(" 1. Video + Audio (recommended)")
+    print(" 2. Video only")
+    print(" 3. Audio only")
+    
+    while True:
+        option = input("Select option (1-3): ").strip()
+        if option == "1":
+            format_str = f"bestvideo[height<={resolution}][ext=mp4]+bestaudio[ext=m4a]/best[height<={resolution}][ext=mp4]/mp4"
+            break
+        elif option == "2":
+            format_str = f"bestvideo[height<={resolution}][ext=mp4]/best[height<={resolution}][ext=mp4]/mp4"
+            break
+        elif option == "3":
+            format_str = "bestaudio[ext=m4a]/bestaudio"
+            break
+        else:
+            print(" Invalid choice. Please enter 1-3.")
+    
+    config = {
+        "format": format_str,
+        "restrictfilenames": True,
+        "writeinfojson": False,
+        "writesubtitles": False,
+        "writeautomaticsub": False,
+        "ffmpeg_location": FFMPEG_PATH,
+    }
+    
+    # Add audio extraction if audio only
+    if option == "3":
+        extract_audio = input("Extract to MP3? (y/n): ").strip().lower()
+        if extract_audio in ['y', 'yes']:
+            config["extractaudio"] = True
+            config["audioformat"] = "mp3"
+            quality = input("Audio quality (e.g., 192K, 320K): ").strip() or "192K"
+            config["audioquality"] = quality
+    
+    print(f"\n Custom quality configuration created:")
+    print(f"  Resolution: {resolution}p")
+    print(f"  Format: {format_str}")
+    
+    return f"custom_{resolution}p", config
+
+def create_custom_ytdlp_config():
+    """Create custom yt-dlp configuration through interactive prompts."""
+    config = {}
+    
+    print("\n Custom yt-dlp Configuration")
+    print("-" * 30)
+    
+    # Format selection with quality options
+    print("\nVideo format options:")
+    print(" 1. best[ext=mp4]/mp4/best (default)")
+    print(" 2. bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/mp4 (high quality)")
+    print(" 3. worst[ext=mp4]/mp4/worst (fast download)")
+    print(" 4. bestaudio[ext=m4a]/bestaudio (audio only)")
+    print(" 5.  Quality-specific formats")
+    print(" 6. Custom format string")
+    
+    format_choice = input("Select format (1-6): ").strip()
+    format_options = {
+        "1": "best[ext=mp4]/mp4/best",
+        "2": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/mp4",
+        "3": "worst[ext=mp4]/mp4/worst",
+        "4": "bestaudio[ext=m4a]/bestaudio",
+    }
+    
+    if format_choice in format_options:
+        config["format"] = format_options[format_choice]
+    elif format_choice == "5":
+        # Quality-specific selection
+        print("\nQuality-specific formats:")
+        print(" 1. 4K Ultra (2160p)")
+        print(" 2. 1080p HD")
+        print(" 3. 720p HD")
+        print(" 4. 480p SD")
+        print(" 5. 360p Low")
+        print(" 6. Custom resolution")
+        
+        quality_choice = input("Select quality (1-6): ").strip()
+        quality_formats = {
+            "1": "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/best[height<=2160][ext=mp4]/mp4",
+            "2": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/mp4",
+            "3": "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/mp4",
+            "4": "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/mp4",
+            "5": "bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360][ext=mp4]/mp4",
+        }
+        
+        if quality_choice in quality_formats:
+            config["format"] = quality_formats[quality_choice]
+        elif quality_choice == "6":
+            resolution = input("Enter maximum resolution height (e.g., 1080, 720): ").strip()
+            if resolution.isdigit():
+                config["format"] = f"bestvideo[height<={resolution}][ext=mp4]+bestaudio[ext=m4a]/best[height<={resolution}][ext=mp4]/mp4"
+            else:
+                config["format"] = "best[ext=mp4]/mp4/best"
+        else:
+            config["format"] = "best[ext=mp4]/mp4/best"
+    elif format_choice == "6":
+        custom_format = input("Enter custom format string: ").strip()
+        if custom_format:
+            config["format"] = custom_format
+        else:
+            config["format"] = "best[ext=mp4]/mp4/best"
+    else:
+        config["format"] = "best[ext=mp4]/mp4/best"
+    
+    # Additional options
+    config["restrictfilenames"] = True
+    config["ffmpeg_location"] = FFMPEG_PATH
+    
+    # Subtitles
+    subtitles = input("Download subtitles? (y/n): ").strip().lower()
+    if subtitles in ['y', 'yes']:
+        config["writesubtitles"] = True
+        config["writeautomaticsub"] = True
+        langs = input("Subtitle languages (comma-separated, e.g., en,vi): ").strip()
+        if langs:
+            config["subtitleslangs"] = [lang.strip() for lang in langs.split(",")]
+    else:
+        config["writesubtitles"] = False
+        config["writeautomaticsub"] = False
+    
+    # Audio extraction
+    if config["format"].startswith("bestaudio"):
+        extract_audio = input("Extract to MP3? (y/n): ").strip().lower()
+        if extract_audio in ['y', 'yes']:
+            config["extractaudio"] = True
+            config["audioformat"] = "mp3"
+            quality = input("Audio quality (e.g., 192K, 320K): ").strip() or "192K"
+            config["audioquality"] = quality
+    
+    # Playlist options
+    playlist_limit = input("Playlist video limit (number or 'none'): ").strip()
+    if playlist_limit.isdigit():
+        config["playlistend"] = int(playlist_limit)
+    
+    # Output template
+    template = input("Output filename template (or press Enter for default): ").strip()
+    if template:
+        config["outtmpl"] = template
+    
+    print(f"\n Custom configuration created:")
+    for key, value in config.items():
+        print(f"  {key}: {value}")
+    
+    return config
+
 LANG_MODELS = {
     "en": {"backend": "openai-whisper", "models": ["tiny", "base", "small", "medium", "large"]},
     "vi": {"backend": "openai-whisper", "models": [
@@ -52,23 +476,124 @@ LANG_MODELS = {
 # ------------------------------
 # YouTube Download
 # ------------------------------
-def download_youtube_video(url: str, output_dir: str) -> str:
+def create_video_folder(video_title: str, base_dir: str) -> str:
+    """Create a folder for the video based on title and timestamp."""
+    import re
+    from datetime import datetime
+    
+    # Clean video title for folder name
+    clean_title = re.sub(r'[<>:"/\\|?*]', '', video_title)  # Remove invalid characters
+    clean_title = re.sub(r'\s+', '_', clean_title.strip())  # Replace spaces with underscores
+    clean_title = clean_title[:50]  # Limit length
+    
+    # Add timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Create folder name
+    folder_name = f"{clean_title}_{timestamp}"
+    folder_path = os.path.join(base_dir, folder_name)
+    
+    # Create the folder
+    os.makedirs(folder_path, exist_ok=True)
+    
+    return folder_path
+
+def get_video_info(url: str) -> dict:
+    """Get video information without downloading."""
+    try:
+        import yt_dlp
+        
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return {
+                'title': info.get('title', 'Unknown'),
+                'uploader': info.get('uploader', 'Unknown'),
+                'duration': info.get('duration', 0),
+                'upload_date': info.get('upload_date', ''),
+                'view_count': info.get('view_count', 0),
+            }
+    except Exception as e:
+        print(f" Could not get video info: {e}")
+        return {
+            'title': 'Unknown_Video',
+            'uploader': 'Unknown',
+            'duration': 0,
+            'upload_date': '',
+            'view_count': 0,
+        }
+
+def save_video_info(video_folder: str, video_info: dict, url: str):
+    """Save video information to a JSON file in the video folder."""
+    import json
+    from datetime import datetime
+    
+    info_file = os.path.join(video_folder, "video_info.json")
+    info_data = {
+        "url": url,
+        "title": video_info['title'],
+        "uploader": video_info['uploader'],
+        "duration": video_info['duration'],
+        "upload_date": video_info['upload_date'],
+        "view_count": video_info['view_count'],
+        "download_time": datetime.now().isoformat(),
+        "folder_name": os.path.basename(video_folder)
+    }
+    
+    try:
+        with open(info_file, 'w', encoding='utf-8') as f:
+            json.dump(info_data, f, indent=2, ensure_ascii=False)
+        print(f" Video info saved to: video_info.json")
+    except Exception as e:
+        print(f" Could not save video info: {e}")
+
+def download_youtube_video(url: str, output_dir: str, preset_name: str = None, custom_config: dict = None) -> str:
     """Download YouTube video and return the path to the downloaded file."""
-    os.makedirs(output_dir, exist_ok=True)
+    # Get video info first to create proper folder structure
+    print(f" Getting video information...")
+    video_info = get_video_info(url)
+    video_title = video_info['title']
+    
+    # Create video-specific folder
+    video_folder = create_video_folder(video_title, output_dir)
+    print(f" Created folder: {os.path.basename(video_folder)}")
+    
     try:
         import yt_dlp
     except ImportError as e:
         raise RuntimeError("yt_dlp is required for --youtube downloads. Install via: python3 -m pip install yt-dlp") from e
     
+    # Get configuration
+    config = get_ytdlp_config(preset_name, custom_config)
+    
     # Configure yt-dlp options
-    ydl_opts = {
-        'format': 'best[ext=mp4]/mp4/best',  # Prefer mp4 format
-        'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
-        'restrictfilenames': True,  # Avoid special characters in filenames
-    }
+    ydl_opts = config.copy()
+    
+    # Set output template to use video-specific folder
+    if 'outtmpl' not in ydl_opts:
+        ydl_opts['outtmpl'] = os.path.join(video_folder, '%(title)s.%(ext)s')
+    
+    # Add progress hook for better user feedback
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            percent = d.get('_percent_str', 'N/A')
+            speed = d.get('_speed_str', 'N/A')
+            print(f"\r Downloading: {percent} at {speed}", end='', flush=True)
+        elif d['status'] == 'finished':
+            print(f"\r Downloaded: {os.path.basename(d['filename'])}")
+    
+    ydl_opts['progress_hooks'] = [progress_hook]
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        print(f"🎬 Downloading video from: {url}")
+        print(f" Downloading video from: {url}")
+        print(f" Using configuration: {preset_name or 'custom' if custom_config else 'default'}")
+        print(f" Using ffmpeg: {ydl_opts.get('ffmpeg_location', 'system default')}")
+        
         try:
             # Extract info to get the filename that will be used
             info = ydl.extract_info(url, download=False)
@@ -77,11 +602,14 @@ def download_youtube_video(url: str, output_dir: str) -> str:
             # Download the video
             ydl.download([url])
             
-            print(f"✅ Downloaded: {os.path.basename(filename)}")
+            # Save video information
+            save_video_info(video_folder, video_info, url)
+            
+            print(f" Download complete: {os.path.basename(filename)}")
             return filename
             
         except Exception as e:
-            print(f"❌ Error downloading video: {e}")
+            print(f" Error downloading video: {e}")
             raise
 
 # ------------------------------
@@ -286,26 +814,75 @@ def extract_wav(input_file: str) -> str:
         return wav_path
     ffmpeg_bin = resolve_ffmpeg_path()
     
-    import platform
-    if platform.machine() == "arm64":  # Apple Silicon optimizations
-        # Use hardware-accelerated decoding on Apple Silicon
-        cmd = [
-            ffmpeg_bin, "-hide_banner", "-loglevel", "error",
-            "-hwaccel", "videotoolbox",  # Hardware acceleration
-            "-i", input_file, 
-            "-ac", "1",  # Mono
-            "-ar", "16000",  # 16kHz sample rate
-            "-acodec", "pcm_s16le",  # Optimal codec for Apple Silicon
-            "-af", "volume=1.0",  # Ensure consistent volume
-            "-y",  # Overwrite output file
-            wav_path
-        ]
-    else:  # Intel Mac fallback
-        cmd = [ffmpeg_bin, "-hide_banner", "-loglevel", "error",
-               "-i", input_file, "-ac", "1", "-ar", "16000", wav_path]
+    # Get video duration for progress tracking
+    duration_cmd = [
+        ffmpeg_bin, "-hide_banner", "-loglevel", "error",
+        "-i", input_file,
+        "-f", "null", "-"
+    ]
     
-    subprocess.run(cmd, check=True)
-    return wav_path
+    try:
+        # Get duration first
+        result = subprocess.run(duration_cmd, capture_output=True, text=True, stderr=subprocess.STDOUT)
+        duration_match = None
+        for line in result.stdout.split('\n'):
+            if 'Duration:' in line:
+                duration_str = line.split('Duration:')[1].split(',')[0].strip()
+                h, m, s = duration_str.split(':')
+                duration_seconds = int(h) * 3600 + int(m) * 60 + float(s)
+                duration_match = duration_seconds
+                break
+        
+        import platform
+        if platform.machine() == "arm64":  # Apple Silicon optimizations
+            # Use hardware-accelerated decoding on Apple Silicon
+            cmd = [
+                ffmpeg_bin, "-hide_banner", "-loglevel", "info",
+                "-hwaccel", "videotoolbox",  # Hardware acceleration
+                "-i", input_file, 
+                "-ac", "1",  # Mono
+                "-ar", "16000",  # 16kHz sample rate
+                "-acodec", "pcm_s16le",  # Optimal codec for Apple Silicon
+                "-af", "volume=1.0",  # Ensure consistent volume
+                "-y",  # Overwrite output file
+                wav_path
+            ]
+        else:  # Intel Mac fallback
+            cmd = [ffmpeg_bin, "-hide_banner", "-loglevel", "info",
+                   "-i", input_file, "-ac", "1", "-ar", "16000", wav_path]
+        
+        if duration_match:
+            print(f" Extracting audio (duration: {duration_match:.1f}s)...")
+            with tqdm(total=duration_match, desc="Extracting audio", unit="s", leave=False) as pbar:
+                process = subprocess.Popen(cmd, stderr=subprocess.PIPE, text=True)
+                
+                while True:
+                    output = process.stderr.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    if output:
+                        # Parse ffmpeg progress
+                        if 'time=' in output:
+                            try:
+                                time_part = output.split('time=')[1].split()[0]
+                                h, m, s = time_part.split(':')
+                                current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                                pbar.n = min(current_time, duration_match)
+                                pbar.refresh()
+                            except (ValueError, IndexError):
+                                pass
+                
+                process.wait()
+                if process.returncode != 0:
+                    raise subprocess.CalledProcessError(process.returncode, cmd)
+        else:
+            # Fallback without progress if duration can't be determined
+            print(f" Extracting audio...")
+            subprocess.run(cmd, check=True)
+        
+        return wav_path
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"FFmpeg failed: {e.stderr.decode()}")
 
 # ------------------------------
 # Subtitle splitting
@@ -387,6 +964,8 @@ def split_for_subtitles(segments, max_len=8.0, max_chars=80):
 # Backends
 # ------------------------------
 def load_backend(backend: str, model_name: str, allow_downloads: bool):
+    print(f" Loading {backend} model '{model_name}'...")
+    
     if backend == "openai-whisper":
         import whisper, torch
         torch.set_num_threads(max(1, (os.cpu_count() or 4) - 1))
@@ -396,34 +975,59 @@ def load_backend(backend: str, model_name: str, allow_downloads: bool):
             expected = os.path.join(cache_dir, f"{model_name}.pt")
             if not os.path.exists(expected):
                 raise RuntimeError(f"Model '{model_name}' not found in cache ({expected}). Re-run with --allow-downloads to fetch it.")
-        return whisper.load_model(model_name, device="cpu", download_root=cache_dir)
+        
+        with tqdm(desc="Loading OpenAI Whisper model", unit="step", leave=False) as pbar:
+            pbar.set_description("Downloading model files...")
+            pbar.update(1)
+            model = whisper.load_model(model_name, device="cpu", download_root=cache_dir)
+            pbar.set_description("Model loaded successfully")
+            pbar.update(1)
+        return model
     
     if backend == "faster-whisper":
         from faster_whisper import WhisperModel
         import platform
         
-        # Optimize for Apple Silicon M1 Pro
-        if platform.machine() == "arm64":  # Apple Silicon
-            # Use optimized settings for Apple Silicon
-            # Set CPU threads to use performance cores (6) + 1 efficiency core
-            return WhisperModel(
-                model_name, 
-                device="cpu", 
-                compute_type="int8",  # Stable performance on Apple Silicon
-                cpu_threads=7,  # 6 performance + 1 efficiency core
-                num_workers=1,  # Single worker per model instance
-                local_files_only=not allow_downloads
-            )
-        else:  # Intel Mac fallback
-            return WhisperModel(model_name, device="cpu", compute_type="int8", 
-                               local_files_only=not allow_downloads)
+        with tqdm(desc="Loading Faster-Whisper model", unit="step", leave=False) as pbar:
+            pbar.set_description("Initializing model...")
+            pbar.update(1)
+            
+            # Optimize for Apple Silicon M1 Pro
+            if platform.machine() == "arm64":  # Apple Silicon
+                # Use optimized settings for Apple Silicon
+                # Set CPU threads to use performance cores (6) + 1 efficiency core
+                pbar.set_description("Configuring for Apple Silicon...")
+                pbar.update(1)
+                model = WhisperModel(
+                    model_name, 
+                    device="cpu", 
+                    compute_type="int8",  # Stable performance on Apple Silicon
+                    cpu_threads=7,  # 6 performance + 1 efficiency core
+                    num_workers=1,  # Single worker per model instance
+                    local_files_only=not allow_downloads
+                )
+            else:  # Intel Mac fallback
+                pbar.set_description("Configuring for Intel...")
+                pbar.update(1)
+                model = WhisperModel(model_name, device="cpu", compute_type="int8", 
+                                   local_files_only=not allow_downloads)
+            
+            pbar.set_description("Model loaded successfully")
+            pbar.update(1)
+        return model
 
     if backend == "pho-whisper":
         # detect if it's ct2 or not
         if model_name.endswith("-ct2"):
             from faster_whisper import WhisperModel
-            return ("pho-ct2", WhisperModel(model_name, device="cpu", compute_type="int8",
-                                            local_files_only=not allow_downloads))
+            with tqdm(desc="Loading Pho-Whisper CT2 model", unit="step", leave=False) as pbar:
+                pbar.set_description("Initializing Pho-Whisper CT2...")
+                pbar.update(1)
+                model = WhisperModel(model_name, device="cpu", compute_type="int8",
+                                    local_files_only=not allow_downloads)
+                pbar.set_description("Model loaded successfully")
+                pbar.update(1)
+            return ("pho-ct2", model)
         else:
             try:
                 from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
@@ -433,19 +1037,39 @@ def load_backend(backend: str, model_name: str, allow_downloads: bool):
                 _subprocess.check_call(["pip", "install", "transformers"])
                 from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
             import torch
-            processor = AutoProcessor.from_pretrained(model_name, local_files_only=not allow_downloads)
-            model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name, dtype=torch.float32,
-                                                              local_files_only=not allow_downloads).to("cpu")
+            
+            with tqdm(desc="Loading Pho-Whisper HF model", unit="step", leave=False) as pbar:
+                pbar.set_description("Loading processor...")
+                pbar.update(1)
+                processor = AutoProcessor.from_pretrained(model_name, local_files_only=not allow_downloads)
+                
+                pbar.set_description("Loading model weights...")
+                pbar.update(1)
+                model = AutoModelForSpeechSeq2Seq.from_pretrained(model_name, dtype=torch.float32,
+                                                                  local_files_only=not allow_downloads).to("cpu")
+                
+                pbar.set_description("Model loaded successfully")
+                pbar.update(1)
             return ("pho-hf", (processor, model))
 
 
     if backend == "hf-whisper":
         from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
         import torch
-        processor = AutoProcessor.from_pretrained(model_name, local_files_only=not allow_downloads)
-        model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            model_name, torch_dtype=torch.float32, local_files_only=not allow_downloads
-        ).to("cpu")
+        
+        with tqdm(desc="Loading HuggingFace Whisper model", unit="step", leave=False) as pbar:
+            pbar.set_description("Loading processor...")
+            pbar.update(1)
+            processor = AutoProcessor.from_pretrained(model_name, local_files_only=not allow_downloads)
+            
+            pbar.set_description("Loading model weights...")
+            pbar.update(1)
+            model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                model_name, torch_dtype=torch.float32, local_files_only=not allow_downloads
+            ).to("cpu")
+            
+            pbar.set_description("Model loaded successfully")
+            pbar.update(1)
         return ("hf", (processor, model))
 
     raise ValueError("Unknown backend")
@@ -462,12 +1086,12 @@ def transcribe_openai(model, file_path: str, lang: str = None):
 def transcribe_faster_whisper(model, file_path: str, lang: str = None):
     """Transcribe using faster-whisper with optimized settings for Vietnamese."""
     # Extract audio to WAV format for better compatibility
-    print(f"🎵 Extracting audio from {os.path.basename(file_path)}...")
+    print(f" Extracting audio from {os.path.basename(file_path)}...")
     wav_path = extract_wav(file_path)
-    print(f"✅ Audio extracted to WAV format")
+    print(f" Audio extracted to WAV format")
     
     # Optimize settings for Vietnamese and Apple Silicon performance
-    print(f"🧠 Running faster-whisper transcription...")
+    print(f" Running faster-whisper transcription...")
     
     import platform
     if platform.machine() == "arm64":  # Apple Silicon optimizations
@@ -507,9 +1131,9 @@ def transcribe_faster_whisper(model, file_path: str, lang: str = None):
             initial_prompt=None,
         )
     
-    print(f"🔄 Processing transcription results...")
+    print(f" Processing transcription results...")
     # Convert segments to our format with progress bar
-    print(f"📄 Converting segments to list format...")
+    print(f" Converting segments to list format...")
     segments_list = []
     # Use tqdm without total since we don't know the count upfront (lazy iterator)
     with tqdm(desc="Processing segments", unit="seg", leave=False) as pbar:
@@ -519,7 +1143,7 @@ def transcribe_faster_whisper(model, file_path: str, lang: str = None):
             if len(segments_list) % 10 == 0 or len(segments_list) == 1:
                 pbar.set_postfix({"count": len(segments_list), "duration": f"{seg.end:.1f}s"})
             pbar.update(1)
-    print(f"✅ Converted {len(segments_list)} segments")
+    print(f" Converted {len(segments_list)} segments")
     # Join all text and process Vietnamese
     full_text = "".join(seg.text for seg in segments).strip()
     full_text = process_vietnamese_text(full_text)
@@ -532,12 +1156,12 @@ def transcribe_faster_whisper(model, file_path: str, lang: str = None):
 def transcribe_faster_whisper_streaming(model, file_path: str, writer: StreamingFileWriter, lang: str = None, max_sub_len: float = 8.0):
     """Transcribe using faster-whisper with streaming output to files"""
     # Extract audio to WAV format for better compatibility
-    print(f"🎵 Extracting audio from {os.path.basename(file_path)}...")
+    print(f" Extracting audio from {os.path.basename(file_path)}...")
     wav_path = extract_wav(file_path)
-    print(f"✅ Audio extracted to WAV format")
+    print(f" Audio extracted to WAV format")
     
     # Optimize settings for Vietnamese and Apple Silicon performance
-    print(f"🧠 Running faster-whisper transcription with streaming...")
+    print(f" Running faster-whisper transcription with streaming...")
     
     import platform
     if platform.machine() == "arm64":  # Apple Silicon optimizations
@@ -577,23 +1201,52 @@ def transcribe_faster_whisper_streaming(model, file_path: str, writer: Streaming
             initial_prompt=None,
         )
     
-    print(f"🔄 Streaming segments to files...")
+    print(f" Streaming segments to files...")
     # Stream segments directly to files with progress bar
     segments_for_splitting = []  # Collect for subtitle splitting only
     
-    with tqdm(desc="Streaming segments", unit="seg", leave=False) as pbar:
+    # Get total duration for progress tracking
+    total_duration = 0
+    if hasattr(info, 'duration') and info.duration:
+        total_duration = info.duration
+    elif segments:
+        # Estimate from last segment if info not available
         for seg in segments:
-            # Write segment immediately to files
-            writer.write_segment(seg.start, seg.end, seg.text)
-            
-            # Also collect for subtitle splitting later if needed
-            segments_for_splitting.append((seg.start, seg.end, seg.text))
-            
-            # Update progress
-            pbar.set_postfix({"count": len(segments_for_splitting), "duration": f"{seg.end:.1f}s"})
-            pbar.update(1)
+            total_duration = max(total_duration, seg.end)
     
-    print(f"✅ Streamed {len(segments_for_splitting)} segments to files")
+    if total_duration > 0:
+        print(f" Total duration: {total_duration:.1f}s")
+        with tqdm(total=total_duration, desc="Transcribing", unit="s", leave=False) as pbar:
+            for seg in segments:
+                # Write segment immediately to files
+                writer.write_segment(seg.start, seg.end, seg.text)
+                
+                # Also collect for subtitle splitting later if needed
+                segments_for_splitting.append((seg.start, seg.end, seg.text))
+                
+                # Update progress based on segment end time
+                pbar.n = min(seg.end, total_duration)
+                pbar.set_postfix({
+                    "segments": len(segments_for_splitting), 
+                    "time": f"{seg.end:.1f}s",
+                    "speed": f"{seg.end/pbar.n*100:.1f}%" if pbar.n > 0 else "0%"
+                })
+                pbar.refresh()
+    else:
+        # Fallback to segment-based progress if duration unknown
+        with tqdm(desc="Streaming segments", unit="seg", leave=False) as pbar:
+            for seg in segments:
+                # Write segment immediately to files
+                writer.write_segment(seg.start, seg.end, seg.text)
+                
+                # Also collect for subtitle splitting later if needed
+                segments_for_splitting.append((seg.start, seg.end, seg.text))
+                
+                # Update progress
+                pbar.set_postfix({"count": len(segments_for_splitting), "duration": f"{seg.end:.1f}s"})
+                pbar.update(1)
+    
+    print(f" Streamed {len(segments_for_splitting)} segments to files")
     return segments_for_splitting
 
 def transcribe_pho_ct2(model, file_path: str, lang: str = None):
@@ -662,55 +1315,124 @@ def transcribe(backend, model_data, file_path, lang):
 # ------------------------------
 # Worker
 # ------------------------------
+def check_existing_transcripts(file_path: str, save_srt: bool = False, save_json: bool = False, save_vtt: bool = False, transcript_folder: str = "./transcripts") -> tuple[bool, str]:
+    """
+    Check if transcription files already exist for a video in the transcripts folder.
+    Returns (exists, existing_folder_path)
+    """
+    video_name = os.path.splitext(os.path.basename(file_path))[0]
+    
+    # Look in the transcripts folder
+    if not os.path.isabs(transcript_folder):
+        transcripts_dir = os.path.join(PROJECT_ROOT, transcript_folder.lstrip('./'))
+    else:
+        transcripts_dir = transcript_folder
+    
+    # If transcripts folder doesn't exist yet, no existing transcripts
+    if not os.path.exists(transcripts_dir):
+        return False, ""
+    
+    # Look for existing transcription folders
+    for item in os.listdir(transcripts_dir):
+        if item.startswith(f"{video_name}_transcription_") and os.path.isdir(os.path.join(transcripts_dir, item)):
+            existing_folder = os.path.join(transcripts_dir, item)
+            
+            # Check if required output files exist
+            base_name = os.path.join(existing_folder, video_name)
+            files_exist = []
+            
+            if save_srt and os.path.exists(f"{base_name}.srt"):
+                files_exist.append("SRT")
+            if save_vtt and os.path.exists(f"{base_name}.vtt"):
+                files_exist.append("VTT")
+            if save_json and os.path.exists(f"{base_name}.json"):
+                files_exist.append("JSON")
+            if os.path.exists(f"{base_name}.txt"):
+                files_exist.append("TXT")
+            
+            # If we have at least the TXT file and any requested format files, consider it complete
+            if "TXT" in files_exist and len(files_exist) > 1:
+                return True, existing_folder
+    
+    return False, ""
+
+
 def process_file(file_path: str, backend: str, model_name: str, lang: str,
-                 save_srt=False, save_json=False, save_vtt=False, max_sub_len: float = 8.0, allow_downloads: bool = True):
+                 save_srt=False, save_json=False, save_vtt=False, max_sub_len: float = 8.0, allow_downloads: bool = True, skip_existing: bool = True, transcript_folder: str = "./transcripts"):
+    # Check if transcription already exists
+    if skip_existing:
+        exists, existing_folder = check_existing_transcripts(file_path, save_srt, save_json, save_vtt, transcript_folder)
+        if exists:
+            fname = os.path.basename(file_path)
+            print(f" Skipping {fname} - transcription already exists in {os.path.basename(existing_folder)}")
+            return
+    
     # Optimize process priority on macOS
     import platform
     if platform.machine() == "arm64":
         try:
-            import os
             # Set higher priority for transcription process
             os.nice(-5)  # Higher priority (requires admin on some systems)
         except (OSError, PermissionError):
             pass  # Continue if can't set priority
     
-    video_dir = os.path.dirname(file_path)
-    out_dir = os.path.join(video_dir, "output")
+    # Create output directory structure in transcripts folder
+    video_name = os.path.splitext(os.path.basename(file_path))[0]
+    
+    # Create transcripts folder if it doesn't exist (only when processing)
+    if not os.path.isabs(transcript_folder):
+        transcripts_dir = os.path.join(PROJECT_ROOT, transcript_folder.lstrip('./'))
+    else:
+        transcripts_dir = transcript_folder
+    os.makedirs(transcripts_dir, exist_ok=True)
+    
+    # Create video-specific output folder in transcripts directory
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Shorten video name to avoid Windows path length issues
+    short_video_name = video_name[:30] if len(video_name) > 30 else video_name
+    output_folder_name = f"{short_video_name}_transcription_{timestamp}"
+    out_dir = os.path.join(transcripts_dir, output_folder_name)
     os.makedirs(out_dir, exist_ok=True)
-    base_name = os.path.splitext(os.path.basename(file_path))[0]
-    base = os.path.join(out_dir, base_name)
+    
+    # Use shortened name for base file name as well
+    base_name = os.path.join(out_dir, short_video_name)
     fname = os.path.basename(file_path)
-    print(f"🎬 Processing {fname} ...")
+    file_start_time = time.time()
+    
+    print(f" Processing {fname} ...")
+    print(f" Output folder: transcripts/{output_folder_name}")
 
     # Load model in this worker process to avoid pickling issues
-    print(f"⚙️ Loading {backend} model '{model_name}' for {fname}...")
+    print(f" Loading {backend} model '{model_name}' for {fname}...")
     model_data = load_backend(backend, model_name, allow_downloads)
-    print(f"✅ Model loaded for {fname}")
+    print(f" Model loaded for {fname}")
     
     # Create streaming writer for real-time output
-    writer = StreamingFileWriter(base)
+    writer = StreamingFileWriter(base_name)
     writer.open_files(save_srt=save_srt, save_vtt=save_vtt, save_json=save_json)
     
     try:
-        print(f"🎬 Starting streaming transcription for {fname}...")
+        print(f" Starting streaming transcription for {fname}...")
         
         if backend == "faster-whisper":
             # Use streaming transcription for faster-whisper
             segments = transcribe_faster_whisper_streaming(model_data, file_path, writer, lang, max_sub_len)
-            print(f"✅ Streaming transcription complete for {fname} - {len(segments)} segments")
+            print(f" Streaming transcription complete for {fname} - {len(segments)} segments")
             
             # Optional: Create split subtitles if needed (but basic files are already written)
             if segments and max_sub_len < 8.0:  # Only if custom split length requested
-                print(f"🔄 Creating split subtitles...")
+                print(f" Creating split subtitles...")
                 split_segments = split_for_subtitles(segments, max_len=max_sub_len)
                 if save_srt:
-                    write_srt(base + "_split.srt", split_segments)
+                    write_srt(base_name + "_split.srt", split_segments)
                 if save_vtt:
-                    write_vtt(base + "_split.vtt", split_segments)
+                    write_vtt(base_name + "_split.vtt", split_segments)
         else:
             # Fall back to regular transcription for other backends
             text, segments = transcribe(backend, model_data, file_path, lang)
-            print(f"✅ Transcription complete for {fname} - {len(segments) if segments else 0} segments")
+            print(f" Transcription complete for {fname} - {len(segments) if segments else 0} segments")
             
             # Write to files manually for non-streaming backends
             if segments:
@@ -721,7 +1443,8 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
         # Always close files
         writer.close_files()
     
-    print(f"✅ All output files saved for {fname}")
+    file_time = time.time() - file_start_time
+    print(f" All output files saved for {fname} (completed in {file_time:.2f}s)")
 
 # ------------------------------
 # Interactive Menus
@@ -729,17 +1452,18 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
 def interactive_main_menu():
     """Main menu to choose operation mode"""
     print("\n" + "="*60)
-    print("🎬 VIDEO TRANSCRIPTION TOOL")
+    print("VIDEO TRANSCRIPTION TOOL")
     print("="*60)
     print("\nWhat would you like to do?")
-    print(" 1. 📥 Download YouTube video and transcribe")
-    print(" 2. 📁 Transcribe existing video files")
-    print(" 3. 📺 Download YouTube video only (no transcription)")
-    print(" 4. ⚙️  Advanced settings")
-    print(" 5. 🚪 Exit")
+    print(" 1. Download YouTube video and transcribe")
+    print(" 2. Transcribe existing video files")
+    print(" 3. Download YouTube video only (no transcription)")
+    print(" 4. Advanced settings")
+    print(" 5. Configure yt-dlp settings")
+    print(" 6. Exit")
     
     while True:
-        choice = input("\nEnter your choice (1-5): ").strip()
+        choice = input("\nEnter your choice (1-6): ").strip()
         if choice == "1":
             return "download_and_transcribe"
         elif choice == "2":
@@ -749,13 +1473,15 @@ def interactive_main_menu():
         elif choice == "4":
             return "advanced_settings"
         elif choice == "5":
+            return "ytdlp_config"
+        elif choice == "6":
             return "exit"
         else:
-            print("❌ Invalid choice. Please enter 1, 2, 3, 4, or 5.")
+            print("Invalid choice. Please enter 1, 2, 3, 4, 5, or 6.")
 
 def interactive_youtube_url_input():
     """Get YouTube URL(s) from user"""
-    print("\n📺 YouTube Video Download")
+    print("\n YouTube Video Download")
     print("-" * 30)
     urls = []
     
@@ -771,18 +1497,46 @@ def interactive_youtube_url_input():
             # Basic URL validation
             if "youtube.com" in url or "youtu.be" in url:
                 urls.append(url)
-                print(f"✅ Added: {url}")
+                print(f" Added: {url}")
             else:
-                print("❌ Invalid YouTube URL. Please enter a valid YouTube link.")
+                print(" Invalid YouTube URL. Please enter a valid YouTube link.")
         
         if not urls:
-            print("❌ Please enter at least one valid YouTube URL.")
+            print(" Please enter at least one valid YouTube URL.")
     
     return urls
 
+def interactive_ytdlp_selection():
+    """Let user select yt-dlp configuration for downloads"""
+    print("\n yt-dlp Configuration Selection")
+    print("-" * 30)
+    print("Choose download configuration:")
+    print(" 1. Use default configuration")
+    print(" 2. Select preset configuration")
+    print(" 3.  Select quality preset")
+    print(" 4. Use custom configuration")
+    print(" 5. Load from saved file")
+    
+    while True:
+        choice = input("\nSelect option (1-5): ").strip()
+        if choice == "1":
+            return None, None  # Use default
+        elif choice == "2":
+            preset_name, config = interactive_ytdlp_config()
+            return preset_name, config
+        elif choice == "3":
+            return interactive_quality_selection()
+        elif choice == "4":
+            return "custom", create_custom_ytdlp_config()
+        elif choice == "5":
+            config = load_ytdlp_config()
+            return "file", config
+        else:
+            print(" Invalid choice. Please enter 1-5.")
+
 def interactive_folder_selection():
     """Let user select or specify folder for video files"""
-    print("\n📁 Video Folder Selection")
+    print("\n Video Folder Selection")
     print("-" * 30)
     print(f" 1. Use default folder: {HARDCODED_FOLDER}")
     print(" 2. Specify custom folder")
@@ -796,30 +1550,46 @@ def interactive_folder_selection():
         elif choice == "2":
             folder = input("Enter folder path: ").strip()
             if not folder:
-                print("❌ Please enter a valid folder path.")
+                print(" Please enter a valid folder path.")
                 continue
             break
         elif choice == "3":
             folder = "."
             break
         else:
-            print("❌ Invalid choice. Please enter 1, 2, or 3.")
+            print(" Invalid choice. Please enter 1, 2, or 3.")
     
     # Check if folder exists
     if not os.path.exists(folder):
         create = input(f"\n❓ Folder '{folder}' doesn't exist. Create it? (y/n): ").strip().lower()
         if create in ['y', 'yes']:
             os.makedirs(folder, exist_ok=True)
-            print(f"✅ Created folder: {folder}")
+            print(f" Created folder: {folder}")
         else:
-            print("❌ Cannot proceed without a valid folder.")
+            print(" Cannot proceed without a valid folder.")
             return interactive_folder_selection()
     
     return folder
 
+def interactive_skip_existing_selection():
+    """Ask user whether to skip existing transcriptions"""
+    print("\nSkip existing transcriptions?")
+    print(" 1. Yes - Skip files that already have transcriptions (recommended)")
+    print(" 2. No - Re-transcribe all files")
+    
+    while True:
+        choice = input("\nEnter your choice (1-2): ").strip()
+        if choice == "1":
+            return True
+        elif choice == "2":
+            return False
+        else:
+            print("Invalid choice, try again.")
+
+
 def interactive_output_format_selection():
     """Let user choose output formats"""
-    print("\n📝 Output Format Selection")
+    print("\n Output Format Selection")
     print("-" * 30)
     print("Select which formats to generate:")
     print(" 1. SRT (SubRip subtitles) - Standard subtitle format")
@@ -844,11 +1614,11 @@ def interactive_output_format_selection():
         elif choice == "6":
             return True, True, False  # SRT + VTT
         else:
-            print("❌ Invalid choice. Please enter 1-6.")
+            print(" Invalid choice. Please enter 1-6.")
 
 def interactive_advanced_settings():
     """Advanced settings configuration"""
-    print("\n⚙️ Advanced Settings")
+    print("\n Advanced Settings")
     print("-" * 30)
     
     settings = {}
@@ -862,11 +1632,11 @@ def interactive_advanced_settings():
         try:
             settings['max_sub_len'] = float(max_len)
             if settings['max_sub_len'] <= 0:
-                print("❌ Please enter a positive number.")
+                print(" Please enter a positive number.")
                 continue
             break
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print(" Please enter a valid number.")
     
     # Number of workers
     import platform
@@ -883,11 +1653,24 @@ def interactive_advanced_settings():
         try:
             settings['workers'] = int(workers)
             if settings['workers'] <= 0:
-                print("❌ Please enter a positive number.")
+                print(" Please enter a positive number.")
                 continue
             break
         except ValueError:
-            print("❌ Please enter a valid number.")
+            print(" Please enter a valid number.")
+    
+    # Transcript folder location
+    while True:
+        transcript_folder = input(f"Transcript output folder (default: ./transcripts): ").strip()
+        if not transcript_folder:
+            settings['transcript_folder'] = "./transcripts"
+            break
+        # Validate folder path
+        if os.path.isabs(transcript_folder) or transcript_folder.startswith('./') or transcript_folder.startswith('../'):
+            settings['transcript_folder'] = transcript_folder
+            break
+        else:
+            print(" Please enter a valid folder path (e.g., ./transcripts, /path/to/folder)")
     
     return settings
 
@@ -921,11 +1704,12 @@ def interactive_model_menu(lang: str):
 # ------------------------------
 def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = None,
                       save_srt: bool = False, allow_downloads: bool = True, save_json: bool = False,
-                      save_vtt: bool = False, workers: int = None, max_sub_len: float = 8.0):
+                      save_vtt: bool = False, workers: int = None, max_sub_len: float = 8.0, skip_existing: bool = True, transcript_folder: str = "./transcripts"):
     files = [os.path.join(folder, f) for f in os.listdir(folder) if f.lower().endswith(".mp4")]
     if not files:
-        print("❌ No MP4 files found")
+        print(" No MP4 files found")
         return
+    
     # Don't load model here - let each worker process load it to avoid pickling issues
     total_start = time.time()
     
@@ -937,7 +1721,8 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
     else:
         workers = workers or max(1, os.cpu_count() - 1)
     
-    print(f"📺 Processing {len(files)} video file(s)...")
+    print(f"Processing {len(files)} video file(s) with {workers} worker(s)...")
+    print(f"Backend: {backend}, Model: {model_name}, Language: {lang or 'auto'}")
     
     # Set optimal multiprocessing method for macOS
     import multiprocessing as mp
@@ -949,18 +1734,59 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
     
     with ProcessPoolExecutor(max_workers=workers) as executor:
         futures = {executor.submit(process_file, f, backend, model_name, lang,
-                                   save_srt, save_json, save_vtt, max_sub_len, allow_downloads): f for f in files}
+                                   save_srt, save_json, save_vtt, max_sub_len, allow_downloads, skip_existing, transcript_folder): f for f in files}
         
-        # Use tqdm for overall progress tracking
-        with tqdm(total=len(files), desc="Processing videos", unit="video") as pbar:
+        # Enhanced progress tracking with ETA
+        completed_files = []
+        failed_files = []
+        
+        with tqdm(total=len(files), desc="Processing videos", unit="video", 
+                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]') as pbar:
             for future in as_completed(futures):
+                file_path = futures[future]
+                file_name = os.path.basename(file_path)
+                
                 try:
                     future.result()
-                    pbar.update(1)
+                    completed_files.append(file_name)
+                    pbar.set_postfix({
+                        'completed': len(completed_files),
+                        'failed': len(failed_files),
+                        'current': file_name[:20] + '...' if len(file_name) > 20 else file_name
+                    })
                 except Exception as e:
-                    print(f"❌ Error processing {futures[future]}: {e}")
-                    pbar.update(1)
-    print(f"\n🎉 All done in {time.time() - total_start:.2f}s")
+                    failed_files.append((file_name, str(e)))
+                    pbar.set_postfix({
+                        'completed': len(completed_files),
+                        'failed': len(failed_files),
+                        'error': file_name[:15] + '...' if len(file_name) > 15 else file_name
+                    })
+                    print(f"\n Error processing {file_name}: {e}")
+                
+                pbar.update(1)
+    
+    # Summary
+    total_time = time.time() - total_start
+    print(f"\n" + "="*60)
+    print(f"PROCESSING COMPLETE")
+    print(f"="*60)
+    print(f"Total time: {total_time:.2f}s")
+    print(f"Files processed: {len(completed_files)}")
+    print(f"Files failed: {len(failed_files)}")
+    
+    if completed_files:
+        print(f"\nSuccessfully processed:")
+        for file in completed_files:
+            print(f"  [OK] {file}")
+    
+    if failed_files:
+        print(f"\nFailed to process:")
+        for file, error in failed_files:
+            print(f"  [FAIL] {file}: {error}")
+    
+    if len(completed_files) > 0:
+        avg_time = total_time / len(completed_files)
+        print(f"\nAverage time per file: {avg_time:.2f}s")
 
 
 # ------------------------------
@@ -986,6 +1812,12 @@ def main():
     parser.add_argument("--allow-downloads", dest="allow_downloads", action="store_true", default=True, help="Allow model downloads")
     parser.add_argument("--no-downloads", dest="allow_downloads", action="store_false", help="Disable model downloads")
     
+    # yt-dlp configuration arguments
+    parser.add_argument("--ytdlp-preset", choices=list(YTDLP_PRESETS.keys()), help="yt-dlp configuration preset")
+    parser.add_argument("--ytdlp-config", help="Path to custom yt-dlp configuration JSON file")
+    parser.add_argument("--quality", choices=["4k_ultra", "1080p_hd", "720p_hd", "480p_sd", "360p_low", "240p_minimal"], 
+                       help="Quick quality selection preset")
+    
     args = parser.parse_args()
     
     if args.help:
@@ -1002,12 +1834,30 @@ def run_cli_mode(args):
     """Run in CLI mode for backwards compatibility"""
     # Handle YouTube download if URL is provided
     if args.youtube:
-        print(f"🎬 YouTube URL provided: {args.youtube}") 
+        print(f" YouTube URL provided: {args.youtube}") 
+        
+        # Load yt-dlp configuration
+        custom_config = None
+        preset_name = args.ytdlp_preset
+        
+        # Handle quality argument (takes precedence over preset)
+        if args.quality:
+            preset_name = args.quality
+            print(f" Using quality preset: {args.quality}")
+        elif args.ytdlp_config:
+            try:
+                with open(args.ytdlp_config, 'r', encoding='utf-8') as f:
+                    custom_config = json.load(f)
+                print(f" Loaded custom yt-dlp config from: {args.ytdlp_config}")
+            except Exception as e:
+                print(f" Error loading yt-dlp config: {e}")
+                return
+        
         try:
-            downloaded_file = download_youtube_video(args.youtube, args.folder)
-            print(f"✅ Video downloaded to: {downloaded_file}")
+            downloaded_file = download_youtube_video(args.youtube, args.folder, preset_name, custom_config)
+            print(f" Video downloaded to: {downloaded_file}")
         except Exception as e:
-            print(f"❌ Failed to download video: {e}")
+            print(f" Failed to download video: {e}")
             return
 
     lang = args.lang or interactive_language_menu()
@@ -1016,14 +1866,14 @@ def run_cli_mode(args):
     else:
         backend, model = args.backend, args.model
 
-    print(f"\n⚙️ Backend: {backend}")
-    print(f"⚙️ Model:   {model}")
-    print(f"⚙️ Lang:    {lang or 'auto'}")
-    print(f"📁 Folder:  {args.folder}")
-    print(f"📝 Outputs: srt={'on' if args.srt else 'off'}, vtt={'on' if args.vtt else 'off'}, json={'on' if args.json else 'off'}")
-    print(f"⏱️ Max sub len: {args.max_sub_len}s")
-    print(f"🧵 Workers: {args.workers or 'auto'}")
-    print(f"📂 Output dir: output/ (under each video folder)")
+    print(f"\nBackend: {backend}")
+    print(f"Model:   {model}")
+    print(f"Lang:    {lang or 'auto'}")
+    print(f"Folder:  {args.folder}")
+    print(f"Outputs: srt={'on' if args.srt else 'off'}, vtt={'on' if args.vtt else 'off'}, json={'on' if args.json else 'off'}")
+    print(f"Max sub len: {args.max_sub_len}s")
+    print(f"Workers: {args.workers or 'auto'}")
+    print(f"Output dir: transcripts/ (centralized transcript folder)")
 
     transcribe_videos(
         args.folder,
@@ -1036,6 +1886,7 @@ def run_cli_mode(args):
         save_vtt=args.vtt,
         workers=args.workers,
         max_sub_len=args.max_sub_len,
+        transcript_folder="./transcripts"
     )
 
 def run_interactive_mode():
@@ -1049,14 +1900,15 @@ def run_interactive_mode():
         operation = interactive_main_menu()
         
         if operation == "exit":
-            print("✅ Thank you for using the Video Transcription Tool!")
+            print(" Thank you for using the Video Transcription Tool!")
             break
             
         elif operation == "advanced_settings":
             advanced_settings.update(interactive_advanced_settings())
-            print(f"\n✅ Advanced settings updated:")
+            print(f"\n Advanced settings updated:")
             print(f"  - Max subtitle length: {advanced_settings['max_sub_len']}s")
             print(f"  - Workers: {advanced_settings['workers'] or 'auto'}")
+            print(f"  - Transcript folder: {advanced_settings.get('transcript_folder', './transcripts')}")
             input("\nPress Enter to continue...")
             continue
             
@@ -1064,15 +1916,26 @@ def run_interactive_mode():
             # Download YouTube videos without transcription
             urls = interactive_youtube_url_input()
             folder = interactive_folder_selection()
+            preset_name, ytdlp_config = interactive_ytdlp_selection()
             
-            print(f"\n📥 Downloading {len(urls)} video(s) to {folder}...")
+            print(f"\n Downloading {len(urls)} video(s) to {folder}...")
             for url in urls:
                 try:
-                    downloaded_file = download_youtube_video(url, folder)
-                    print(f"✅ Downloaded: {os.path.basename(downloaded_file)}")
+                    downloaded_file = download_youtube_video(url, folder, preset_name, ytdlp_config)
+                    print(f" Downloaded: {os.path.basename(downloaded_file)}")
                 except Exception as e:
-                    print(f"❌ Failed to download {url}: {e}")
+                    print(f" Failed to download {url}: {e}")
             
+            input("\nPress Enter to continue...")
+            
+        elif operation == "ytdlp_config":
+            # Configure yt-dlp settings
+            preset_name, config = interactive_ytdlp_config()
+            if preset_name and config:
+                print(f"\n yt-dlp configuration set to: {preset_name}")
+                save_choice = input("Save this configuration to file? (y/n): ").strip().lower()
+                if save_choice in ['y', 'yes']:
+                    save_ytdlp_config(config)
             input("\nPress Enter to continue...")
             
         elif operation in ["download_and_transcribe", "transcribe_only"]:
@@ -1080,15 +1943,16 @@ def run_interactive_mode():
             if operation == "download_and_transcribe":
                 urls = interactive_youtube_url_input()
                 folder = interactive_folder_selection()
+                preset_name, ytdlp_config = interactive_ytdlp_selection()
                 
                 # Download videos first
-                print(f"\n📥 Downloading {len(urls)} video(s)...")
+                print(f"\n Downloading {len(urls)} video(s)...")
                 for url in urls:
                     try:
-                        downloaded_file = download_youtube_video(url, folder)
-                        print(f"✅ Downloaded: {os.path.basename(downloaded_file)}")
+                        downloaded_file = download_youtube_video(url, folder, preset_name, ytdlp_config)
+                        print(f" Downloaded: {os.path.basename(downloaded_file)}")
                     except Exception as e:
-                        print(f"❌ Failed to download {url}: {e}")
+                        print(f" Failed to download {url}: {e}")
             else:
                 folder = interactive_folder_selection()
             
@@ -1096,18 +1960,21 @@ def run_interactive_mode():
             lang = interactive_language_menu()
             backend, model = interactive_model_menu(lang or "en")
             save_srt, save_vtt, save_json = interactive_output_format_selection()
+            skip_existing = interactive_skip_existing_selection()
             
             # Show configuration
-            print(f"\n📝 Configuration Summary:")
-            print(f"⚙️ Backend: {backend}")
-            print(f"⚙️ Model: {model}")
-            print(f"⚙️ Language: {lang or 'auto'}")
-            print(f"📁 Folder: {folder}")
-            print(f"📝 Formats: SRT={save_srt}, VTT={save_vtt}, JSON={save_json}, TXT=True")
-            print(f"⏱️ Max subtitle length: {advanced_settings['max_sub_len']}s")
-            print(f"🧵 Workers: {advanced_settings['workers'] or 'auto'}")
+            print(f"\nConfiguration Summary:")
+            print(f"Backend: {backend}")
+            print(f"Model: {model}")
+            print(f"Language: {lang or 'auto'}")
+            print(f"Folder: {folder}")
+            print(f"Formats: SRT={save_srt}, VTT={save_vtt}, JSON={save_json}, TXT=True")
+            print(f"Skip existing: {skip_existing}")
+            print(f"Max subtitle length: {advanced_settings['max_sub_len']}s")
+            print(f"Workers: {advanced_settings['workers'] or 'auto'}")
+            print(f"Transcript folder: {advanced_settings.get('transcript_folder', './transcripts')}")
             
-            confirm = input("\n🚀 Start transcription? (y/n): ").strip().lower()
+            confirm = input("\nStart transcription? (y/n): ").strip().lower()
             if confirm in ['y', 'yes']:
                 try:
                     transcribe_videos(
@@ -1119,14 +1986,16 @@ def run_interactive_mode():
                         save_json=save_json,
                         save_vtt=save_vtt,
                         workers=advanced_settings['workers'],
-                        max_sub_len=advanced_settings['max_sub_len']
+                        max_sub_len=advanced_settings['max_sub_len'],
+                        skip_existing=skip_existing,
+                        transcript_folder=advanced_settings.get('transcript_folder', './transcripts')
                     )
                 except KeyboardInterrupt:
-                    print("\n❌ Transcription interrupted by user.")
+                    print("\n Transcription interrupted by user.")
                 except Exception as e:
-                    print(f"\n❌ Error during transcription: {e}")
+                    print(f"\n Error during transcription: {e}")
             else:
-                print("❌ Transcription cancelled.")
+                print(" Transcription cancelled.")
             
             input("\nPress Enter to continue...")
 

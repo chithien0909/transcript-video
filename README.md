@@ -96,3 +96,4 @@ python main.py
 
 
 # transcript-video
+python3 main.py --cli --folder videos --backend faster-whisper --model medium --lang vi --srt --vtt
