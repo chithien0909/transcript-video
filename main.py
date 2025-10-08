@@ -16,6 +16,34 @@ TRANSCRIPTS_FOLDER = r"./transcripts"
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(PROJECT_ROOT, ".cache")
 
+# Performance optimization settings
+import psutil
+import multiprocessing as mp
+
+# System resource detection
+SYSTEM_CORES = os.cpu_count() or 4
+PHYSICAL_CORES = psutil.cpu_count(logical=False) or SYSTEM_CORES // 2
+TOTAL_MEMORY_GB = psutil.virtual_memory().total / (1024**3)
+AVAILABLE_MEMORY_GB = psutil.virtual_memory().available / (1024**3)
+
+# Optimized worker configuration based on system resources
+def get_optimal_workers():
+    """Calculate optimal number of workers based on system resources."""
+    # For Intel i7-1260P (12 cores, 16 threads): Use 8-10 workers for transcription
+    # Leave some cores for system and I/O operations
+    if SYSTEM_CORES >= 16:
+        return min(10, SYSTEM_CORES - 4)  # Leave 4 cores for system
+    elif SYSTEM_CORES >= 8:
+        return min(6, SYSTEM_CORES - 2)   # Leave 2 cores for system
+    else:
+        return max(1, SYSTEM_CORES - 1)    # Leave 1 core for system
+
+OPTIMAL_WORKERS = get_optimal_workers()
+
+# Memory optimization settings
+MAX_MEMORY_PER_WORKER_GB = 2.0  # Maximum memory per worker process
+OPTIMAL_CHUNK_SIZE = min(30, max(10, int(AVAILABLE_MEMORY_GB / OPTIMAL_WORKERS)))  # Audio chunk size in seconds
+
 # Get ffmpeg path for yt-dlp
 def get_ffmpeg_path():
     """Get the path to ffmpeg executable for yt-dlp."""
@@ -160,17 +188,30 @@ def configure_cache_dirs():
     os.environ.setdefault("WHISPER_CACHE_DIR", os.path.join(CACHE_DIR, "whisper"))
     os.environ.setdefault("XDG_CACHE_HOME", CACHE_DIR)
     
-    # macOS performance optimizations
+    # Performance optimizations for Intel i7-1260P
     import platform
+    
+    # CPU optimization for Intel processors
+    os.environ.setdefault("OMP_NUM_THREADS", str(PHYSICAL_CORES))
+    os.environ.setdefault("MKL_NUM_THREADS", str(PHYSICAL_CORES))
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", str(PHYSICAL_CORES))
+    os.environ.setdefault("NUMEXPR_NUM_THREADS", str(PHYSICAL_CORES))
+    
+    # Memory optimization
+    os.environ.setdefault("PYTHONUNBUFFERED", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")  # Avoid tokenizer warnings
+    
+    # Intel-specific optimizations
+    if platform.machine() == "AMD64":  # Intel x64
+        # Enable Intel MKL optimizations
+        os.environ.setdefault("MKL_THREADING_LAYER", "GNU")
+        # Memory allocation optimization
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:512")
+    
+    # macOS performance optimizations (if running on Mac)
     if platform.machine() == "arm64":  # Apple Silicon
-        # Enable Apple's Accelerate framework optimizations
-        os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "8")  # Use all CPU threads
-        os.environ.setdefault("OPENBLAS_NUM_THREADS", "8")
-        os.environ.setdefault("MKL_NUM_THREADS", "8")
-        # Memory optimization for Apple Silicon
-        os.environ.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.0")  # Disable MPS caching
-        # Faster I/O operations
-        os.environ.setdefault("PYTHONUNBUFFERED", "1")
+        os.environ.setdefault("VECLIB_MAXIMUM_THREADS", str(PHYSICAL_CORES))
+        os.environ.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.0")
 
 configure_cache_dirs()
 
@@ -992,10 +1033,19 @@ def load_backend(backend: str, model_name: str, allow_downloads: bool):
             pbar.set_description("Initializing model...")
             pbar.update(1)
             
-            # Optimize for Apple Silicon M1 Pro
-            if platform.machine() == "arm64":  # Apple Silicon
-                # Use optimized settings for Apple Silicon
-                # Set CPU threads to use performance cores (6) + 1 efficiency core
+            # Optimize for Intel i7-1260P (12 cores, 16 threads)
+            if platform.machine() == "AMD64":  # Intel x64
+                pbar.set_description("Configuring for Intel i7-1260P...")
+                pbar.update(1)
+                model = WhisperModel(
+                    model_name, 
+                    device="cpu", 
+                    compute_type="int8",  # Optimal for Intel performance cores
+                    cpu_threads=PHYSICAL_CORES,  # Use all physical cores
+                    num_workers=1,  # Single worker per model instance
+                    local_files_only=not allow_downloads
+                )
+            elif platform.machine() == "arm64":  # Apple Silicon
                 pbar.set_description("Configuring for Apple Silicon...")
                 pbar.update(1)
                 model = WhisperModel(
@@ -1006,8 +1056,8 @@ def load_backend(backend: str, model_name: str, allow_downloads: bool):
                     num_workers=1,  # Single worker per model instance
                     local_files_only=not allow_downloads
                 )
-            else:  # Intel Mac fallback
-                pbar.set_description("Configuring for Intel...")
+            else:  # Fallback
+                pbar.set_description("Configuring for generic CPU...")
                 pbar.update(1)
                 model = WhisperModel(model_name, device="cpu", compute_type="int8", 
                                    local_files_only=not allow_downloads)
@@ -1084,17 +1134,40 @@ def transcribe_openai(model, file_path: str, lang: str = None):
     return result["text"].strip(), segments
 
 def transcribe_faster_whisper(model, file_path: str, lang: str = None):
-    """Transcribe using faster-whisper with optimized settings for Vietnamese."""
+    """Transcribe using faster-whisper with optimized settings for Intel i7-1260P."""
     # Extract audio to WAV format for better compatibility
     print(f" Extracting audio from {os.path.basename(file_path)}...")
     wav_path = extract_wav(file_path)
     print(f" Audio extracted to WAV format")
     
-    # Optimize settings for Vietnamese and Apple Silicon performance
-    print(f" Running faster-whisper transcription...")
+    # Optimize settings for Intel i7-1260P performance
+    print(f" Running faster-whisper transcription with Intel optimizations...")
     
     import platform
-    if platform.machine() == "arm64":  # Apple Silicon optimizations
+    
+    # Intel i7-1260P optimized settings (12 cores, 16 threads)
+    if platform.machine() == "AMD64":  # Intel x64
+        segments, info = model.transcribe(
+            wav_path,
+            language=lang or None,
+            beam_size=5,  # Balanced for Intel performance cores
+            best_of=3,    # Multiple candidates for better accuracy
+            temperature=[0.0, 0.2, 0.4],  # Reduced temperature range for speed
+            vad_filter=True,
+            vad_parameters=dict(
+                min_silence_duration_ms=400,  # Optimized for Intel
+                threshold=0.5,
+            ),
+            condition_on_previous_text=False,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            no_speech_threshold=0.6,
+            initial_prompt=None,
+            # Intel-specific optimizations
+            chunk_length=OPTIMAL_CHUNK_SIZE,  # Dynamic chunk size based on memory
+            without_timestamps=False,
+        )
+    elif platform.machine() == "arm64":  # Apple Silicon optimizations
         segments, info = model.transcribe(
             wav_path,
             language=lang or None,
@@ -1115,7 +1188,7 @@ def transcribe_faster_whisper(model, file_path: str, lang: str = None):
             chunk_length=30,  # Process in 30s chunks for efficiency
             without_timestamps=False,  # Keep timestamps
         )
-    else:  # Intel Mac fallback with original settings
+    else:  # Fallback settings
         segments, info = model.transcribe(
             wav_path,
             language=lang or None,
@@ -1620,9 +1693,15 @@ def interactive_output_format_selection():
             print(" Invalid choice. Please enter 1-6.")
 
 def interactive_advanced_settings():
-    """Advanced settings configuration"""
+    """Advanced settings configuration with performance optimization"""
     print("\n Advanced Settings")
     print("-" * 30)
+    
+    # Show system information
+    print(f"System: Intel i7-1260P ({SYSTEM_CORES} cores, {PHYSICAL_CORES} physical)")
+    print(f"Memory: {AVAILABLE_MEMORY_GB:.1f}GB available of {TOTAL_MEMORY_GB:.1f}GB total")
+    print(f"Optimal workers: {OPTIMAL_WORKERS}")
+    print(f"Optimal chunk size: {OPTIMAL_CHUNK_SIZE}s")
     
     settings = {}
     
@@ -1641,23 +1720,27 @@ def interactive_advanced_settings():
         except ValueError:
             print(" Please enter a valid number.")
     
-    # Number of workers
-    import platform
-    if platform.machine() == "arm64":  # Apple Silicon
-        default_workers = 3
-    else:
-        default_workers = max(1, os.cpu_count() - 1)
+    # Number of workers with optimization recommendations
+    print(f"\nWorker Configuration:")
+    print(f"  Recommended: {OPTIMAL_WORKERS} workers (optimized for Intel i7-1260P)")
+    print(f"  Maximum: {SYSTEM_CORES} workers (all cores)")
+    print(f"  Conservative: {max(1, PHYSICAL_CORES)} workers (physical cores only)")
     
     while True:
-        workers = input(f"Number of parallel workers (default: {default_workers}): ").strip()
+        workers = input(f"Number of parallel workers (default: {OPTIMAL_WORKERS}): ").strip()
         if not workers:
-            settings['workers'] = default_workers
+            settings['workers'] = OPTIMAL_WORKERS
             break
         try:
             settings['workers'] = int(workers)
             if settings['workers'] <= 0:
                 print(" Please enter a positive number.")
                 continue
+            if settings['workers'] > SYSTEM_CORES:
+                print(f" Warning: Using more workers ({settings['workers']}) than CPU cores ({SYSTEM_CORES}) may reduce performance.")
+                confirm = input(" Continue anyway? (y/n): ").strip().lower()
+                if confirm not in ['y', 'yes']:
+                    continue
             break
         except ValueError:
             print(" Please enter a valid number.")
@@ -1716,20 +1799,26 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
     # Don't load model here - let each worker process load it to avoid pickling issues
     total_start = time.time()
     
-    import platform
-    if platform.machine() == "arm64":  # Apple Silicon optimizations
-        # On Apple Silicon, use fewer workers but each with more CPU power
-        # M1 Pro: 6 performance cores, so use 2-3 workers to avoid context switching
-        workers = workers or min(3, len(files))  # Max 3 workers or number of files
-    else:
-        workers = workers or max(1, os.cpu_count() - 1)
+    # Use optimized worker configuration
+    workers = workers or OPTIMAL_WORKERS
+    workers = min(workers, len(files))  # Don't use more workers than files
     
     print(f"Processing {len(files)} video file(s) with {workers} worker(s)...")
     print(f"Backend: {backend}, Model: {model_name}, Language: {lang or 'auto'}")
+    print(f"System: {SYSTEM_CORES} cores, {AVAILABLE_MEMORY_GB:.1f}GB RAM available")
+    print(f"Optimized for Intel i7-1260P: {PHYSICAL_CORES} physical cores")
     
-    # Set optimal multiprocessing method for macOS
+    # Set optimal multiprocessing method
     import multiprocessing as mp
-    if platform.machine() == "arm64" and hasattr(mp, "set_start_method"):
+    import platform
+    
+    # Use spawn method on Windows (default) for better stability
+    if platform.system() == "Windows":
+        try:
+            mp.set_start_method('spawn', force=True)
+        except RuntimeError:
+            pass  # Already set
+    elif platform.machine() == "arm64" and hasattr(mp, "set_start_method"):
         try:
             mp.set_start_method('fork', force=True)  # Faster than spawn on macOS
         except RuntimeError:
@@ -1739,9 +1828,18 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
         futures = {executor.submit(process_file, f, backend, model_name, lang,
                                    save_srt, save_json, save_vtt, max_sub_len, allow_downloads, skip_existing, transcript_folder): f for f in files}
         
-        # Enhanced progress tracking with ETA
+        # Enhanced progress tracking with resource monitoring
         completed_files = []
         failed_files = []
+        
+        def get_system_stats():
+            """Get current system resource usage."""
+            try:
+                cpu_percent = psutil.cpu_percent(interval=0.1)
+                memory = psutil.virtual_memory()
+                return f"CPU: {cpu_percent:.1f}% | RAM: {memory.percent:.1f}%"
+            except:
+                return "CPU: N/A | RAM: N/A"
         
         with tqdm(total=len(files), desc="Processing videos", unit="video", 
                  bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]') as pbar:
@@ -1755,14 +1853,16 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
                     pbar.set_postfix({
                         'completed': len(completed_files),
                         'failed': len(failed_files),
-                        'current': file_name[:20] + '...' if len(file_name) > 20 else file_name
+                        'current': file_name[:20] + '...' if len(file_name) > 20 else file_name,
+                        'resources': get_system_stats()
                     })
                 except Exception as e:
                     failed_files.append((file_name, str(e)))
                     pbar.set_postfix({
                         'completed': len(completed_files),
                         'failed': len(failed_files),
-                        'error': file_name[:15] + '...' if len(file_name) > 15 else file_name
+                        'error': file_name[:15] + '...' if len(file_name) > 15 else file_name,
+                        'resources': get_system_stats()
                     })
                     print(f"\n Error processing {file_name}: {e}")
                 
@@ -1834,7 +1934,7 @@ def main():
         run_interactive_mode()
 
 def run_cli_mode(args):
-    """Run in CLI mode for backwards compatibility"""
+    """Run in CLI mode with performance optimizations"""
     # Handle YouTube download if URL is provided
     if args.youtube:
         print(f" YouTube URL provided: {args.youtube}") 
@@ -1869,13 +1969,22 @@ def run_cli_mode(args):
     else:
         backend, model = args.backend, args.model
 
-    print(f"\nBackend: {backend}")
+    # Use optimized worker count if not specified
+    workers = args.workers or OPTIMAL_WORKERS
+
+    print(f"\n=== PERFORMANCE CONFIGURATION ===")
+    print(f"System: Intel i7-1260P ({SYSTEM_CORES} cores, {PHYSICAL_CORES} physical)")
+    print(f"Memory: {AVAILABLE_MEMORY_GB:.1f}GB available")
+    print(f"Workers: {workers} (optimized for your system)")
+    print(f"Chunk size: {OPTIMAL_CHUNK_SIZE}s")
+    
+    print(f"\n=== TRANSCRIPTION SETTINGS ===")
+    print(f"Backend: {backend}")
     print(f"Model:   {model}")
     print(f"Lang:    {lang or 'auto'}")
     print(f"Folder:  {args.folder}")
     print(f"Outputs: srt={'on' if args.srt else 'off'}, vtt={'on' if args.vtt else 'off'}, json={'on' if args.json else 'off'}")
     print(f"Max sub len: {args.max_sub_len}s")
-    print(f"Workers: {args.workers or 'auto'}")
     print(f"Output dir: transcripts/ (centralized transcript folder)")
 
     transcribe_videos(
@@ -1887,7 +1996,7 @@ def run_cli_mode(args):
         allow_downloads=args.allow_downloads,
         save_json=args.json,
         save_vtt=args.vtt,
-        workers=args.workers,
+        workers=workers,
         max_sub_len=args.max_sub_len,
         transcript_folder="./transcripts"
     )

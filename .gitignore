@@ -25,3 +25,4 @@ _tmp
 *.xlsx
 *.csv
 *.zip
+__pycache__
