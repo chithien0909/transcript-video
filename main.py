@@ -1376,6 +1376,12 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
         except (OSError, PermissionError):
             pass  # Continue if can't set priority
     
+    fname = os.path.basename(file_path)
+    file_start_time = time.time()
+    
+    print(f" Processing {fname} ...")
+    
+    # Only create transcript folder structure when we're actually going to transcribe
     # Create output directory structure in transcripts folder
     video_name = os.path.splitext(os.path.basename(file_path))[0]
     
@@ -1398,10 +1404,7 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
     
     # Use shortened name for base file name as well
     base_name = os.path.join(out_dir, short_video_name)
-    fname = os.path.basename(file_path)
-    file_start_time = time.time()
     
-    print(f" Processing {fname} ...")
     print(f" Output folder: transcripts/{output_folder_name}")
 
     # Load model in this worker process to avoid pickling issues
