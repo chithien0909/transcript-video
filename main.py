@@ -726,6 +726,171 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
 # ------------------------------
 # Interactive Menus
 # ------------------------------
+def interactive_main_menu():
+    """Main menu to choose operation mode"""
+    print("\n" + "="*60)
+    print("🎬 VIDEO TRANSCRIPTION TOOL")
+    print("="*60)
+    print("\nWhat would you like to do?")
+    print(" 1. 📥 Download YouTube video and transcribe")
+    print(" 2. 📁 Transcribe existing video files")
+    print(" 3. 📺 Download YouTube video only (no transcription)")
+    print(" 4. ⚙️  Advanced settings")
+    print(" 5. 🚪 Exit")
+    
+    while True:
+        choice = input("\nEnter your choice (1-5): ").strip()
+        if choice == "1":
+            return "download_and_transcribe"
+        elif choice == "2":
+            return "transcribe_only"
+        elif choice == "3":
+            return "download_only"
+        elif choice == "4":
+            return "advanced_settings"
+        elif choice == "5":
+            return "exit"
+        else:
+            print("❌ Invalid choice. Please enter 1, 2, 3, 4, or 5.")
+
+def interactive_youtube_url_input():
+    """Get YouTube URL(s) from user"""
+    print("\n📺 YouTube Video Download")
+    print("-" * 30)
+    urls = []
+    
+    while True:
+        if not urls:
+            url = input("Enter YouTube URL: ").strip()
+        else:
+            url = input("Enter another YouTube URL (or press Enter to continue): ").strip()
+            if not url:
+                break
+        
+        if url:
+            # Basic URL validation
+            if "youtube.com" in url or "youtu.be" in url:
+                urls.append(url)
+                print(f"✅ Added: {url}")
+            else:
+                print("❌ Invalid YouTube URL. Please enter a valid YouTube link.")
+        
+        if not urls:
+            print("❌ Please enter at least one valid YouTube URL.")
+    
+    return urls
+
+def interactive_folder_selection():
+    """Let user select or specify folder for video files"""
+    print("\n📁 Video Folder Selection")
+    print("-" * 30)
+    print(f" 1. Use default folder: {HARDCODED_FOLDER}")
+    print(" 2. Specify custom folder")
+    print(" 3. Use current directory")
+    
+    while True:
+        choice = input("\nSelect folder option (1-3): ").strip()
+        if choice == "1":
+            folder = HARDCODED_FOLDER
+            break
+        elif choice == "2":
+            folder = input("Enter folder path: ").strip()
+            if not folder:
+                print("❌ Please enter a valid folder path.")
+                continue
+            break
+        elif choice == "3":
+            folder = "."
+            break
+        else:
+            print("❌ Invalid choice. Please enter 1, 2, or 3.")
+    
+    # Check if folder exists
+    if not os.path.exists(folder):
+        create = input(f"\n❓ Folder '{folder}' doesn't exist. Create it? (y/n): ").strip().lower()
+        if create in ['y', 'yes']:
+            os.makedirs(folder, exist_ok=True)
+            print(f"✅ Created folder: {folder}")
+        else:
+            print("❌ Cannot proceed without a valid folder.")
+            return interactive_folder_selection()
+    
+    return folder
+
+def interactive_output_format_selection():
+    """Let user choose output formats"""
+    print("\n📝 Output Format Selection")
+    print("-" * 30)
+    print("Select which formats to generate:")
+    print(" 1. SRT (SubRip subtitles) - Standard subtitle format")
+    print(" 2. VTT (WebVTT subtitles) - Web-compatible format")
+    print(" 3. JSON (Timeline data) - Machine-readable format")
+    print(" 4. TXT (Plain text) - Always included")
+    print(" 5. All formats")
+    print(" 6. SRT + VTT (most common)")
+    
+    while True:
+        choice = input("\nSelect format option (1-6): ").strip()
+        if choice == "1":
+            return True, False, False  # srt, vtt, json
+        elif choice == "2":
+            return False, True, False
+        elif choice == "3":
+            return False, False, True
+        elif choice == "4":
+            return False, False, False  # TXT only
+        elif choice == "5":
+            return True, True, True  # All formats
+        elif choice == "6":
+            return True, True, False  # SRT + VTT
+        else:
+            print("❌ Invalid choice. Please enter 1-6.")
+
+def interactive_advanced_settings():
+    """Advanced settings configuration"""
+    print("\n⚙️ Advanced Settings")
+    print("-" * 30)
+    
+    settings = {}
+    
+    # Max subtitle length
+    while True:
+        max_len = input(f"Max subtitle length in seconds (default: 8.0): ").strip()
+        if not max_len:
+            settings['max_sub_len'] = 8.0
+            break
+        try:
+            settings['max_sub_len'] = float(max_len)
+            if settings['max_sub_len'] <= 0:
+                print("❌ Please enter a positive number.")
+                continue
+            break
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    # Number of workers
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon
+        default_workers = 3
+    else:
+        default_workers = max(1, os.cpu_count() - 1)
+    
+    while True:
+        workers = input(f"Number of parallel workers (default: {default_workers}): ").strip()
+        if not workers:
+            settings['workers'] = default_workers
+            break
+        try:
+            settings['workers'] = int(workers)
+            if settings['workers'] <= 0:
+                print("❌ Please enter a positive number.")
+                continue
+            break
+        except ValueError:
+            print("❌ Please enter a valid number.")
+    
+    return settings
+
 def interactive_language_menu():
     langs = ["auto", "en (English)", "vi (Vietnamese)", "ja (Japanese)", "ko (Korean)", "zh (Chinese)"]
     print("\nSelect language:")
@@ -802,23 +967,39 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
 # CLI
 # ------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Batch transcribe MP4 files (CPU + FFmpeg optimized, interactive)")
+    # Support both CLI and interactive modes
+    parser = argparse.ArgumentParser(description="Video Transcription Tool with Interactive Menu", add_help=False)
+    parser.add_argument("--help", "-h", action="store_true", help="Show this help message")
+    parser.add_argument("--cli", action="store_true", help="Use CLI mode (skip interactive menu)")
+    
+    # CLI-only arguments (for backwards compatibility)
     parser.add_argument("--folder", default=HARDCODED_FOLDER, help="Folder with MP4 files")
     parser.add_argument("--youtube", help="YouTube URL to download and transcribe")
     parser.add_argument("--backend", choices=["openai-whisper","pho-whisper","hf-whisper","faster-whisper"], help="ASR backend")
     parser.add_argument("--model", help="Model name/id")
-    parser.add_argument("--lang", default="auto", help="Language code or 'auto' (en, vi, ja, ko, zh, auto)")
-    parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers (default: CPU-1)")
-    parser.add_argument("--srt", action="store_true",default=True, help="Also save .srt subtitle file")
-    parser.add_argument("--vtt", action="store_true",default=True, help="Also save .vtt subtitle file")
-    parser.add_argument("--json", action="store_true",default=True, help="Also save .json timeline file")
-    parser.add_argument("--task", choices=["transcribe", "translate"], default="transcribe",
-                        help="Whisper task (for hf-whisper only)")
-    parser.add_argument("--max-sub-len", type=float, default=8.0, help="Max subtitle segment length in seconds (default 8)")
-    parser.add_argument("--allow-downloads", dest="allow_downloads", action="store_true", default=True, help="Allow model downloads if missing")
-    parser.add_argument("--no-downloads", dest="allow_downloads", action="store_false", help="Do not download models; require local cache")
+    parser.add_argument("--lang", default="vi", help="Language code (en, vi, ja, ko, zh)")
+    parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers")
+    parser.add_argument("--srt", action="store_true", help="Save .srt subtitle file")
+    parser.add_argument("--vtt", action="store_true", help="Save .vtt subtitle file")
+    parser.add_argument("--json", action="store_true", help="Save .json timeline file")
+    parser.add_argument("--max-sub-len", type=float, default=8.0, help="Max subtitle segment length in seconds")
+    parser.add_argument("--allow-downloads", dest="allow_downloads", action="store_true", default=True, help="Allow model downloads")
+    parser.add_argument("--no-downloads", dest="allow_downloads", action="store_false", help="Disable model downloads")
+    
     args = parser.parse_args()
+    
+    if args.help:
+        parser.print_help()
+        return
+    
+    # Use CLI mode if specified or if YouTube URL provided directly
+    if args.cli or args.youtube:
+        run_cli_mode(args)
+    else:
+        run_interactive_mode()
 
+def run_cli_mode(args):
+    """Run in CLI mode for backwards compatibility"""
     # Handle YouTube download if URL is provided
     if args.youtube:
         print(f"🎬 YouTube URL provided: {args.youtube}") 
@@ -829,8 +1010,7 @@ def main():
             print(f"❌ Failed to download video: {e}")
             return
 
-    # Map 'auto' to None for backend auto-detection
-    lang = None if (args.lang and args.lang.lower() == "auto") else args.lang
+    lang = args.lang or interactive_language_menu()
     if not args.backend or not args.model:
         backend, model = interactive_model_menu(lang or "en")
     else:
@@ -842,7 +1022,7 @@ def main():
     print(f"📁 Folder:  {args.folder}")
     print(f"📝 Outputs: srt={'on' if args.srt else 'off'}, vtt={'on' if args.vtt else 'off'}, json={'on' if args.json else 'off'}")
     print(f"⏱️ Max sub len: {args.max_sub_len}s")
-    print(f"🧵 Workers: {args.workers or max(1, os.cpu_count()-1)}")
+    print(f"🧵 Workers: {args.workers or 'auto'}")
     print(f"📂 Output dir: output/ (under each video folder)")
 
     transcribe_videos(
@@ -857,6 +1037,98 @@ def main():
         workers=args.workers,
         max_sub_len=args.max_sub_len,
     )
+
+def run_interactive_mode():
+    """Run in interactive menu mode"""
+    advanced_settings = {
+        'max_sub_len': 8.0,
+        'workers': None
+    }
+    
+    while True:
+        operation = interactive_main_menu()
+        
+        if operation == "exit":
+            print("✅ Thank you for using the Video Transcription Tool!")
+            break
+            
+        elif operation == "advanced_settings":
+            advanced_settings.update(interactive_advanced_settings())
+            print(f"\n✅ Advanced settings updated:")
+            print(f"  - Max subtitle length: {advanced_settings['max_sub_len']}s")
+            print(f"  - Workers: {advanced_settings['workers'] or 'auto'}")
+            input("\nPress Enter to continue...")
+            continue
+            
+        elif operation == "download_only":
+            # Download YouTube videos without transcription
+            urls = interactive_youtube_url_input()
+            folder = interactive_folder_selection()
+            
+            print(f"\n📥 Downloading {len(urls)} video(s) to {folder}...")
+            for url in urls:
+                try:
+                    downloaded_file = download_youtube_video(url, folder)
+                    print(f"✅ Downloaded: {os.path.basename(downloaded_file)}")
+                except Exception as e:
+                    print(f"❌ Failed to download {url}: {e}")
+            
+            input("\nPress Enter to continue...")
+            
+        elif operation in ["download_and_transcribe", "transcribe_only"]:
+            # Get folder and optionally download videos
+            if operation == "download_and_transcribe":
+                urls = interactive_youtube_url_input()
+                folder = interactive_folder_selection()
+                
+                # Download videos first
+                print(f"\n📥 Downloading {len(urls)} video(s)...")
+                for url in urls:
+                    try:
+                        downloaded_file = download_youtube_video(url, folder)
+                        print(f"✅ Downloaded: {os.path.basename(downloaded_file)}")
+                    except Exception as e:
+                        print(f"❌ Failed to download {url}: {e}")
+            else:
+                folder = interactive_folder_selection()
+            
+            # Get transcription settings
+            lang = interactive_language_menu()
+            backend, model = interactive_model_menu(lang or "en")
+            save_srt, save_vtt, save_json = interactive_output_format_selection()
+            
+            # Show configuration
+            print(f"\n📝 Configuration Summary:")
+            print(f"⚙️ Backend: {backend}")
+            print(f"⚙️ Model: {model}")
+            print(f"⚙️ Language: {lang or 'auto'}")
+            print(f"📁 Folder: {folder}")
+            print(f"📝 Formats: SRT={save_srt}, VTT={save_vtt}, JSON={save_json}, TXT=True")
+            print(f"⏱️ Max subtitle length: {advanced_settings['max_sub_len']}s")
+            print(f"🧵 Workers: {advanced_settings['workers'] or 'auto'}")
+            
+            confirm = input("\n🚀 Start transcription? (y/n): ").strip().lower()
+            if confirm in ['y', 'yes']:
+                try:
+                    transcribe_videos(
+                        folder,
+                        backend,
+                        model,
+                        lang=lang,
+                        save_srt=save_srt,
+                        save_json=save_json,
+                        save_vtt=save_vtt,
+                        workers=advanced_settings['workers'],
+                        max_sub_len=advanced_settings['max_sub_len']
+                    )
+                except KeyboardInterrupt:
+                    print("\n❌ Transcription interrupted by user.")
+                except Exception as e:
+                    print(f"\n❌ Error during transcription: {e}")
+            else:
+                print("❌ Transcription cancelled.")
+            
+            input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
     main()
