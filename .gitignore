@@ -14,3 +14,14 @@
 .venv
 _tmp
 *.wav
+*.srt
+*.vtt
+*.json
+*.txt
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.csv
+*.zip

@@ -21,6 +21,18 @@ def configure_cache_dirs():
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", os.path.join(CACHE_DIR, "hf", "hub"))
     os.environ.setdefault("WHISPER_CACHE_DIR", os.path.join(CACHE_DIR, "whisper"))
     os.environ.setdefault("XDG_CACHE_HOME", CACHE_DIR)
+    
+    # macOS performance optimizations
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon
+        # Enable Apple's Accelerate framework optimizations
+        os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "8")  # Use all CPU threads
+        os.environ.setdefault("OPENBLAS_NUM_THREADS", "8")
+        os.environ.setdefault("MKL_NUM_THREADS", "8")
+        # Memory optimization for Apple Silicon
+        os.environ.setdefault("PYTORCH_MPS_HIGH_WATERMARK_RATIO", "0.0")  # Disable MPS caching
+        # Faster I/O operations
+        os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
 configure_cache_dirs()
 
@@ -105,6 +117,71 @@ def write_vtt(path: str, segments: List[Tuple[float, float, str]]):
 def write_text(path: str, text: str):
     with open(path, "w", encoding="utf-8") as f:
         f.write(text)
+
+# Streaming file writers for real-time output
+class StreamingFileWriter:
+    def __init__(self, base_path: str):
+        self.base_path = base_path
+        self.srt_file = None
+        self.vtt_file = None
+        self.json_file = None
+        self.txt_file = None
+        self.segment_count = 0
+        self.json_segments = []
+        
+    def open_files(self, save_srt=False, save_vtt=False, save_json=False):
+        """Open all output files for streaming"""
+        if save_srt:
+            self.srt_file = open(self.base_path + ".srt", "w", encoding="utf-8")
+        if save_vtt:
+            self.vtt_file = open(self.base_path + ".vtt", "w", encoding="utf-8")
+            self.vtt_file.write("WEBVTT\n\n")
+        if save_json:
+            self.json_segments = []  # Collect for final write
+        # Always create TXT file for full transcript
+        self.txt_file = open(self.base_path + ".txt", "w", encoding="utf-8")
+    
+    def write_segment(self, start: float, end: float, text: str):
+        """Write a single segment to all open files"""
+        self.segment_count += 1
+        processed_text = process_vietnamese_text(text.strip())
+        
+        # Write to SRT
+        if self.srt_file:
+            self.srt_file.write(f"{self.segment_count}\n")
+            self.srt_file.write(f"{format_srt_timestamp(start)} --> {format_srt_timestamp(end)}\n")
+            self.srt_file.write(processed_text + "\n\n")
+            self.srt_file.flush()  # Immediate write
+        
+        # Write to VTT
+        if self.vtt_file:
+            vtt_start = format_srt_timestamp(start).replace(",", ".")
+            vtt_end = format_srt_timestamp(end).replace(",", ".")
+            self.vtt_file.write(f"{vtt_start} --> {vtt_end}\n{processed_text}\n\n")
+            self.vtt_file.flush()  # Immediate write
+        
+        # Collect for JSON
+        if self.json_segments is not None:
+            self.json_segments.append({"start": start, "end": end, "text": processed_text})
+        
+        # Write to TXT (append)
+        if self.txt_file:
+            self.txt_file.write(processed_text + " ")
+            self.txt_file.flush()  # Immediate write
+    
+    def close_files(self):
+        """Close all files and finalize JSON"""
+        if self.srt_file:
+            self.srt_file.close()
+        if self.vtt_file:
+            self.vtt_file.close()
+        if self.txt_file:
+            self.txt_file.close()
+        if self.json_segments is not None:
+            # Write JSON file at the end
+            import json
+            with open(self.base_path + ".json", "w", encoding="utf-8") as f:
+                json.dump(self.json_segments, f, ensure_ascii=False, indent=2)
 
 def process_vietnamese_text(text: str) -> str:
     """Process Vietnamese text for better readability."""
@@ -208,8 +285,25 @@ def extract_wav(input_file: str) -> str:
     if os.path.exists(wav_path):
         return wav_path
     ffmpeg_bin = resolve_ffmpeg_path()
-    cmd = [ffmpeg_bin, "-hide_banner", "-loglevel", "error",
-           "-i", input_file, "-ac", "1", "-ar", "16000", wav_path]
+    
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon optimizations
+        # Use hardware-accelerated decoding on Apple Silicon
+        cmd = [
+            ffmpeg_bin, "-hide_banner", "-loglevel", "error",
+            "-hwaccel", "videotoolbox",  # Hardware acceleration
+            "-i", input_file, 
+            "-ac", "1",  # Mono
+            "-ar", "16000",  # 16kHz sample rate
+            "-acodec", "pcm_s16le",  # Optimal codec for Apple Silicon
+            "-af", "volume=1.0",  # Ensure consistent volume
+            "-y",  # Overwrite output file
+            wav_path
+        ]
+    else:  # Intel Mac fallback
+        cmd = [ffmpeg_bin, "-hide_banner", "-loglevel", "error",
+               "-i", input_file, "-ac", "1", "-ar", "16000", wav_path]
+    
     subprocess.run(cmd, check=True)
     return wav_path
 
@@ -306,9 +400,23 @@ def load_backend(backend: str, model_name: str, allow_downloads: bool):
     
     if backend == "faster-whisper":
         from faster_whisper import WhisperModel
-        # Use int8 quantization for better performance on CPU
-        return WhisperModel(model_name, device="cpu", compute_type="int8", 
-                           local_files_only=not allow_downloads)
+        import platform
+        
+        # Optimize for Apple Silicon M1 Pro
+        if platform.machine() == "arm64":  # Apple Silicon
+            # Use optimized settings for Apple Silicon
+            # Set CPU threads to use performance cores (6) + 1 efficiency core
+            return WhisperModel(
+                model_name, 
+                device="cpu", 
+                compute_type="int8",  # Stable performance on Apple Silicon
+                cpu_threads=7,  # 6 performance + 1 efficiency core
+                num_workers=1,  # Single worker per model instance
+                local_files_only=not allow_downloads
+            )
+        else:  # Intel Mac fallback
+            return WhisperModel(model_name, device="cpu", compute_type="int8", 
+                               local_files_only=not allow_downloads)
 
     if backend == "pho-whisper":
         # detect if it's ct2 or not
@@ -358,54 +466,135 @@ def transcribe_faster_whisper(model, file_path: str, lang: str = None):
     wav_path = extract_wav(file_path)
     print(f"✅ Audio extracted to WAV format")
     
-    # Optimize settings for Vietnamese
+    # Optimize settings for Vietnamese and Apple Silicon performance
     print(f"🧠 Running faster-whisper transcription...")
-    segments, info = model.transcribe(
-        wav_path,
-        language=lang or None,
-        beam_size=5,  # Good balance of accuracy and speed
-        best_of=3,    # Try 3 candidates for better accuracy
-        temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],  # Temperature fallback
-        vad_filter=True,  # Voice activity detection to remove silence
-        vad_parameters=dict(min_silence_duration_ms=500),  # 0.5s minimum silence
-        condition_on_previous_text=False,  # Better for Vietnamese
-        compression_ratio_threshold=2.4,  # Detect repetition
-        log_prob_threshold=-1.0,  # Quality threshold
-        no_speech_threshold=0.6,  # Silence detection
-        initial_prompt=None,  # Let it detect naturally
-    )
+    
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon optimizations
+        segments, info = model.transcribe(
+            wav_path,
+            language=lang or None,
+            beam_size=3,  # Reduced for speed on Apple Silicon
+            best_of=1,    # Single candidate for speed
+            temperature=0.0,  # Single temperature for consistency
+            vad_filter=True,  # Keep VAD for efficiency
+            vad_parameters=dict(
+                min_silence_duration_ms=300,  # Shorter silence detection
+                threshold=0.5,  # Lower threshold for better detection
+            ),
+            condition_on_previous_text=False,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            no_speech_threshold=0.6,
+            initial_prompt=None,
+            # Apple Silicon specific optimizations
+            chunk_length=30,  # Process in 30s chunks for efficiency
+            without_timestamps=False,  # Keep timestamps
+        )
+    else:  # Intel Mac fallback with original settings
+        segments, info = model.transcribe(
+            wav_path,
+            language=lang or None,
+            beam_size=5,
+            best_of=3,
+            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=500),
+            condition_on_previous_text=False,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            no_speech_threshold=0.6,
+            initial_prompt=None,
+        )
     
     print(f"🔄 Processing transcription results...")
     # Convert segments to our format with progress bar
     print(f"📄 Converting segments to list format...")
     segments_list = []
     # Use tqdm without total since we don't know the count upfront (lazy iterator)
-    with tqdm(desc="Processing segments", unit="seg") as pbar:
+    with tqdm(desc="Processing segments", unit="seg", leave=False) as pbar:
         for seg in segments:
-            print(f"Debug - Segment: start={seg.start:.2f}, end={seg.end:.2f}, text='{seg.text[:50]}...'\\n")
             segments_list.append((seg.start, seg.end, seg.text))
-            pbar.set_postfix({"duration": f"{seg.end:.1f}s", "text": seg.text[:30] + "..." if len(seg.text) > 30 else seg.text})
+            # Update progress bar less frequently for better performance
+            if len(segments_list) % 10 == 0 or len(segments_list) == 1:
+                pbar.set_postfix({"count": len(segments_list), "duration": f"{seg.end:.1f}s"})
             pbar.update(1)
-            # Log every 5th segment for more frequent updates
-            if len(segments_list) % 5 == 0:
-                print(f"🔄 Processed {len(segments_list)} segments so far...")
     print(f"✅ Converted {len(segments_list)} segments")
-    print(f"✅ Transcription results processed")
-    
-    print(f"🔄 Joining all text...")
-    # Join all text
+    # Join all text and process Vietnamese
     full_text = "".join(seg.text for seg in segments).strip()
-    print(f"✅ Text joined")
-    
-    # Process Vietnamese text
     full_text = process_vietnamese_text(full_text)
-    print(f"✅ Vietnamese text processed")
-    # Also process individual segments
-    print(f"🇻🇳 Processing Vietnamese text for segments...")
+    
+    # Process individual segments with minimal logging
     processed_segments = [(start, end, process_vietnamese_text(text)) 
-                         for start, end, text in tqdm(segments_list, desc="Processing Vietnamese text", unit="segment")]
-    print(f"✅ Individual segments processed")
+                         for start, end, text in tqdm(segments_list, desc="Processing Vietnamese", unit="segment", leave=False)]
     return full_text, processed_segments
+
+def transcribe_faster_whisper_streaming(model, file_path: str, writer: StreamingFileWriter, lang: str = None, max_sub_len: float = 8.0):
+    """Transcribe using faster-whisper with streaming output to files"""
+    # Extract audio to WAV format for better compatibility
+    print(f"🎵 Extracting audio from {os.path.basename(file_path)}...")
+    wav_path = extract_wav(file_path)
+    print(f"✅ Audio extracted to WAV format")
+    
+    # Optimize settings for Vietnamese and Apple Silicon performance
+    print(f"🧠 Running faster-whisper transcription with streaming...")
+    
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon optimizations
+        segments, info = model.transcribe(
+            wav_path,
+            language=lang or None,
+            beam_size=3,  # Reduced for speed on Apple Silicon
+            best_of=1,    # Single candidate for speed
+            temperature=0.0,  # Single temperature for consistency
+            vad_filter=True,  # Keep VAD for efficiency
+            vad_parameters=dict(
+                min_silence_duration_ms=300,  # Shorter silence detection
+                threshold=0.5,  # Lower threshold for better detection
+            ),
+            condition_on_previous_text=False,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            no_speech_threshold=0.6,
+            initial_prompt=None,
+            # Apple Silicon specific optimizations
+            chunk_length=30,  # Process in 30s chunks for efficiency
+            without_timestamps=False,  # Keep timestamps
+        )
+    else:  # Intel Mac fallback with original settings
+        segments, info = model.transcribe(
+            wav_path,
+            language=lang or None,
+            beam_size=5,
+            best_of=3,
+            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=500),
+            condition_on_previous_text=False,
+            compression_ratio_threshold=2.4,
+            log_prob_threshold=-1.0,
+            no_speech_threshold=0.6,
+            initial_prompt=None,
+        )
+    
+    print(f"🔄 Streaming segments to files...")
+    # Stream segments directly to files with progress bar
+    segments_for_splitting = []  # Collect for subtitle splitting only
+    
+    with tqdm(desc="Streaming segments", unit="seg", leave=False) as pbar:
+        for seg in segments:
+            # Write segment immediately to files
+            writer.write_segment(seg.start, seg.end, seg.text)
+            
+            # Also collect for subtitle splitting later if needed
+            segments_for_splitting.append((seg.start, seg.end, seg.text))
+            
+            # Update progress
+            pbar.set_postfix({"count": len(segments_for_splitting), "duration": f"{seg.end:.1f}s"})
+            pbar.update(1)
+    
+    print(f"✅ Streamed {len(segments_for_splitting)} segments to files")
+    return segments_for_splitting
 
 def transcribe_pho_ct2(model, file_path: str, lang: str = None):
     segments, _ = model.transcribe(file_path, language=lang or None, beam_size=1,
@@ -475,6 +664,16 @@ def transcribe(backend, model_data, file_path, lang):
 # ------------------------------
 def process_file(file_path: str, backend: str, model_name: str, lang: str,
                  save_srt=False, save_json=False, save_vtt=False, max_sub_len: float = 8.0, allow_downloads: bool = True):
+    # Optimize process priority on macOS
+    import platform
+    if platform.machine() == "arm64":
+        try:
+            import os
+            # Set higher priority for transcription process
+            os.nice(-5)  # Higher priority (requires admin on some systems)
+        except (OSError, PermissionError):
+            pass  # Continue if can't set priority
+    
     video_dir = os.path.dirname(file_path)
     out_dir = os.path.join(video_dir, "output")
     os.makedirs(out_dir, exist_ok=True)
@@ -488,25 +687,41 @@ def process_file(file_path: str, backend: str, model_name: str, lang: str,
     model_data = load_backend(backend, model_name, allow_downloads)
     print(f"✅ Model loaded for {fname}")
     
-    print(f"🎤 Starting transcription for {fname}...")
-    text, segments = transcribe(backend, model_data, file_path, lang)
-    print(f"✅ Transcription complete for {fname} - {len(segments) if segments else 0} segments")
-
-    # Always save TXT transcript
-    print(f"💾 Saving output files for {fname}...")
-    write_text(base + ".txt", text)
-
-    if segments:
-        segments = split_for_subtitles(segments, max_len=max_sub_len)  # YouTube-friendly
-
-    if save_srt and segments:
-        write_srt(base + ".srt", segments)
-    if save_vtt and segments:
-        write_vtt(base + ".vtt", segments)
-    if save_json and segments:
-        write_json(base + ".json", segments)
-
-    print(f"✅ {len(text.split())} words → {base}.txt")
+    # Create streaming writer for real-time output
+    writer = StreamingFileWriter(base)
+    writer.open_files(save_srt=save_srt, save_vtt=save_vtt, save_json=save_json)
+    
+    try:
+        print(f"🎬 Starting streaming transcription for {fname}...")
+        
+        if backend == "faster-whisper":
+            # Use streaming transcription for faster-whisper
+            segments = transcribe_faster_whisper_streaming(model_data, file_path, writer, lang, max_sub_len)
+            print(f"✅ Streaming transcription complete for {fname} - {len(segments)} segments")
+            
+            # Optional: Create split subtitles if needed (but basic files are already written)
+            if segments and max_sub_len < 8.0:  # Only if custom split length requested
+                print(f"🔄 Creating split subtitles...")
+                split_segments = split_for_subtitles(segments, max_len=max_sub_len)
+                if save_srt:
+                    write_srt(base + "_split.srt", split_segments)
+                if save_vtt:
+                    write_vtt(base + "_split.vtt", split_segments)
+        else:
+            # Fall back to regular transcription for other backends
+            text, segments = transcribe(backend, model_data, file_path, lang)
+            print(f"✅ Transcription complete for {fname} - {len(segments) if segments else 0} segments")
+            
+            # Write to files manually for non-streaming backends
+            if segments:
+                for start, end, text_seg in segments:
+                    writer.write_segment(start, end, text_seg)
+    
+    finally:
+        # Always close files
+        writer.close_files()
+    
+    print(f"✅ All output files saved for {fname}")
 
 # ------------------------------
 # Interactive Menus
@@ -548,9 +763,25 @@ def transcribe_videos(folder: str, backend: str, model_name: str, lang: str = No
         return
     # Don't load model here - let each worker process load it to avoid pickling issues
     total_start = time.time()
-    workers = workers or max(1, os.cpu_count() - 1)
+    
+    import platform
+    if platform.machine() == "arm64":  # Apple Silicon optimizations
+        # On Apple Silicon, use fewer workers but each with more CPU power
+        # M1 Pro: 6 performance cores, so use 2-3 workers to avoid context switching
+        workers = workers or min(3, len(files))  # Max 3 workers or number of files
+    else:
+        workers = workers or max(1, os.cpu_count() - 1)
     
     print(f"📺 Processing {len(files)} video file(s)...")
+    
+    # Set optimal multiprocessing method for macOS
+    import multiprocessing as mp
+    if platform.machine() == "arm64" and hasattr(mp, "set_start_method"):
+        try:
+            mp.set_start_method('fork', force=True)  # Faster than spawn on macOS
+        except RuntimeError:
+            pass  # Already set
+    
     with ProcessPoolExecutor(max_workers=workers) as executor:
         futures = {executor.submit(process_file, f, backend, model_name, lang,
                                    save_srt, save_json, save_vtt, max_sub_len, allow_downloads): f for f in files}
@@ -576,7 +807,7 @@ def main():
     parser.add_argument("--youtube", help="YouTube URL to download and transcribe")
     parser.add_argument("--backend", choices=["openai-whisper","pho-whisper","hf-whisper","faster-whisper"], help="ASR backend")
     parser.add_argument("--model", help="Model name/id")
-    parser.add_argument("--lang", default="vi", help="Language code (en, vi, ja, ko, zh)")
+    parser.add_argument("--lang", default="auto", help="Language code or 'auto' (en, vi, ja, ko, zh, auto)")
     parser.add_argument("--workers", type=int, default=None, help="Number of parallel workers (default: CPU-1)")
     parser.add_argument("--srt", action="store_true",default=True, help="Also save .srt subtitle file")
     parser.add_argument("--vtt", action="store_true",default=True, help="Also save .vtt subtitle file")
@@ -598,7 +829,8 @@ def main():
             print(f"❌ Failed to download video: {e}")
             return
 
-    lang = args.lang or interactive_language_menu()
+    # Map 'auto' to None for backend auto-detection
+    lang = None if (args.lang and args.lang.lower() == "auto") else args.lang
     if not args.backend or not args.model:
         backend, model = interactive_model_menu(lang or "en")
     else:
